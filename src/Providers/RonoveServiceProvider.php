@@ -10,6 +10,7 @@ use Azuriom\Models\Post;
 use Azuriom\Plugin\Ronove\Middleware\SetLocale;
 use Azuriom\Plugin\Ronove\Providers\Resources\PostResourceProvider;
 use Azuriom\Plugin\Ronove\RonoveManager;
+use Azuriom\Plugin\Ronove\Services\LanguageSwitcher;
 use Azuriom\Plugin\Ronove\Services\LocaleManager;
 use Azuriom\Plugin\Ronove\Services\ResourceRegistry;
 use Azuriom\Plugin\Ronove\Services\TranslationResolver;
@@ -23,6 +24,7 @@ class RonoveServiceProvider extends BasePluginServiceProvider
     {
         $this->app->singleton(ResourceRegistry::class);
         $this->app->singleton(LocaleManager::class);
+        $this->app->singleton(LanguageSwitcher::class);
         $this->app->singleton(TranslationResolver::class);
         $this->app->singleton(RonoveManager::class);
         $this->app->alias(RonoveManager::class, 'ronove');

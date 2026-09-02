@@ -6,6 +6,7 @@ use Azuriom\Models\User;
 use Azuriom\Plugin\Ronove\Models\Locale;
 use Azuriom\Plugin\Ronove\Models\UserPreference;
 use Azuriom\Plugin\Ronove\Services\LocaleManager;
+use Azuriom\Plugin\Ronove\Support\LocaleOption;
 use Azuriom\Plugin\Ronove\Tests\TestCase;
 
 class LocaleSelectionTest extends TestCase
@@ -100,5 +101,73 @@ class LocaleSelectionTest extends TestCase
             ->assertOk();
 
         $this->assertSame('es_ES', app()->getLocale());
+    }
+
+    public function test_the_public_page_uses_the_shared_language_buttons(): void
+    {
+        Locale::query()->create([
+            'code' => 'en',
+            'name' => 'English',
+            'native_name' => 'English',
+            'is_enabled' => true,
+            'position' => 0,
+        ]);
+
+        $this->get('/ronove')
+            ->assertOk()
+            ->assertSee('English')
+            ->assertSee('name="locale"', false)
+            ->assertSee('action="'.route('ronove.locale.update').'"', false);
+    }
+
+    public function test_the_theme_api_returns_presentation_safe_language_options(): void
+    {
+        Locale::query()->create([
+            'code' => 'en',
+            'name' => 'English',
+            'native_name' => 'English',
+            'is_enabled' => true,
+            'position' => 0,
+        ]);
+        Locale::query()->create([
+            'code' => 'es_ES',
+            'name' => 'Spanish',
+            'native_name' => 'Español',
+            'is_enabled' => true,
+            'position' => 1,
+        ]);
+        app()->setLocale('es_ES');
+
+        $options = app('ronove')->languageOptions();
+        $current = app('ronove')->currentLanguage();
+
+        $this->assertCount(2, $options);
+        $this->assertContainsOnlyInstancesOf(LocaleOption::class, $options);
+        $this->assertSame('es_ES', $current?->code);
+        $this->assertTrue($current?->isCurrent);
+        $this->assertSame([
+            'code' => 'es_ES',
+            'name' => 'Spanish',
+            'native_name' => 'Español',
+            'is_current' => true,
+        ], $current?->jsonSerialize());
+        $this->assertSame(route('ronove.locale.update'), app('ronove')->languageUpdateUrl());
+    }
+
+    public function test_the_dropdown_can_render_as_an_icon_only_selector(): void
+    {
+        Locale::query()->create([
+            'code' => 'en',
+            'name' => 'English',
+            'native_name' => 'English',
+            'is_enabled' => true,
+            'position' => 0,
+        ]);
+
+        $html = view('ronove::language-selector', ['showCurrentName' => false])->render();
+
+        $this->assertStringContainsString('bi-translate', $html);
+        $this->assertStringContainsString('visually-hidden', $html);
+        $this->assertStringNotContainsString('<span class="ms-1">English</span>', $html);
     }
 }
