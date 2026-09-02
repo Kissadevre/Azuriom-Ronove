@@ -226,22 +226,32 @@
             <div class="ronove-editor-actions">
                 <div class="ronove-editor-actions-primary">
                 @if($reviewWorkflowEnabled)
-                    <button class="btn btn-primary" type="submit" name="workflow_action" value="save">
-                        <i class="bi bi-save me-1" aria-hidden="true"></i> {{ trans('ronove::admin.reviews.save_draft') }}
-                    </button>
+                    <div class="btn-group">
+                        <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-save me-1" aria-hidden="true"></i>{{ trans('ronove::admin.translations.save_menu') }}
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><button class="dropdown-item" type="submit" name="workflow_action" value="save"><i class="bi bi-file-earmark me-2" aria-hidden="true"></i>{{ trans('ronove::admin.translations.save_draft') }}</button></li>
+                            @if($canReview && $canPublish)
+                                <li><button class="dropdown-item" type="submit" name="workflow_action" value="publish"><i class="bi bi-cloud-arrow-up me-2" aria-hidden="true"></i>{{ trans('ronove::admin.translations.save_publish') }}</button></li>
+                            @endif
+                        </ul>
+                    </div>
                     <button class="btn btn-success" type="submit" name="workflow_action" value="submit">
                         <i class="bi bi-send me-1" aria-hidden="true"></i> {{ trans('ronove::admin.reviews.submit') }}
                     </button>
                 @else
-                    <select class="form-select w-auto" name="status" aria-label="{{ trans('ronove::admin.translations.status_label') }}">
-                        <option value="draft" @selected(old('status', $formStatus) === 'draft')>{{ trans('ronove::admin.translations.status.draft') }}</option>
-                        @if($canPublish)
-                            <option value="published" @selected(old('status', $formStatus) === 'published')>{{ trans('ronove::admin.translations.status.published') }}</option>
-                        @endif
-                    </select>
-                    <button class="btn btn-primary" type="submit">
-                        <i class="bi bi-save me-1" aria-hidden="true"></i> {{ trans('messages.actions.save') }}
-                    </button>
+                    <div class="btn-group">
+                        <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-save me-1" aria-hidden="true"></i>{{ trans('ronove::admin.translations.save_menu') }}
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><button class="dropdown-item" type="submit" name="status" value="draft"><i class="bi bi-file-earmark me-2" aria-hidden="true"></i>{{ trans('ronove::admin.translations.save_draft') }}</button></li>
+                            @if($canPublish)
+                                <li><button class="dropdown-item" type="submit" name="status" value="published"><i class="bi bi-cloud-arrow-up me-2" aria-hidden="true"></i>{{ trans('ronove::admin.translations.save_publish') }}</button></li>
+                            @endif
+                        </ul>
+                    </div>
                 @endif
                 <button class="btn btn-outline-primary" type="submit" formaction="{{ route('ronove.admin.translations.preview', ['type' => $provider->type(), 'key' => $provider->key($resourceModel)]) }}">
                     <i class="bi bi-eye me-1" aria-hidden="true"></i> {{ trans('ronove::admin.translations.preview_action') }}

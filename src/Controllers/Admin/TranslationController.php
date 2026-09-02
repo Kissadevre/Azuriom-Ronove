@@ -264,9 +264,15 @@ class TranslationController extends Controller
         $reviewWorkflowEnabled = $workflow->enabled();
         $validated = $request->validate($this->translationRules($provider, $reviewWorkflowEnabled, true));
         $workflowAction = $reviewWorkflowEnabled ? $validated['workflow_action'] : null;
+        $publishFromReview = $reviewWorkflowEnabled && $workflowAction === 'publish';
         $status = $reviewWorkflowEnabled
-            ? Translation::DRAFT
+            ? ($publishFromReview ? Translation::PUBLISHED : Translation::DRAFT)
             : $validated['status'];
+
+        if ($publishFromReview) {
+            Gate::authorize('ronove.review');
+            Gate::authorize('ronove.publish');
+        }
 
         if (! $reviewWorkflowEnabled && $status === Translation::PUBLISHED) {
             Gate::authorize('ronove.publish');
@@ -279,7 +285,7 @@ class TranslationController extends Controller
             ? null
             : (int) $request->user()->getAuthIdentifier();
 
-        if ($reviewWorkflowEnabled && $workflowAction === 'submit' && $values === []) {
+        if ($reviewWorkflowEnabled && in_array($workflowAction, ['submit', 'publish'], true) && $values === []) {
             throw ValidationException::withMessages([
                 'values' => trans('ronove::admin.reviews.empty_submission'),
             ]);
@@ -293,6 +299,7 @@ class TranslationController extends Controller
             $resolver,
             $reviewWorkflowEnabled,
             $workflowAction,
+            $publishFromReview,
             $status,
             $revisions,
             $userId,
@@ -308,14 +315,18 @@ class TranslationController extends Controller
                 ->first();
 
             $reviewStatus = $reviewWorkflowEnabled
-                ? ($workflowAction === 'submit' ? Translation::REVIEW_PENDING : Translation::REVIEW_DRAFT)
+                ? match ($workflowAction) {
+                    'submit' => Translation::REVIEW_PENDING,
+                    'publish' => Translation::REVIEW_APPROVED,
+                    default => Translation::REVIEW_DRAFT,
+                }
                 : ($status === Translation::PUBLISHED ? Translation::REVIEW_APPROVED : Translation::REVIEW_DRAFT);
             $sourceHash = $resolver->sourceHash($provider, $model);
             $publishedValues = $reviewWorkflowEnabled
-                ? $existing?->publicValues()
+                ? ($publishFromReview ? $values : $existing?->publicValues())
                 : ($status === Translation::PUBLISHED ? $values : null);
             $publishedSourceHash = $reviewWorkflowEnabled
-                ? ($existing?->published_source_hash ?? ($existing?->isPublished() ? $existing->source_hash : null))
+                ? ($publishFromReview ? $sourceHash : ($existing?->published_source_hash ?? ($existing?->isPublished() ? $existing->source_hash : null)))
                 : ($status === Translation::PUBLISHED ? $sourceHash : null);
             $preserveFeedback = $reviewWorkflowEnabled
                 && $workflowAction === 'save'
@@ -348,9 +359,11 @@ class TranslationController extends Controller
             );
             $revisions->record(
                 $translation,
-                $workflowAction === 'submit'
-                    ? TranslationRevision::SUBMITTED
-                    : TranslationRevision::SAVED,
+                match ($workflowAction) {
+                    'submit' => TranslationRevision::SUBMITTED,
+                    'publish' => TranslationRevision::APPROVED,
+                    default => TranslationRevision::SAVED,
+                },
                 $userId,
             );
 
@@ -393,9 +406,11 @@ class TranslationController extends Controller
             'type' => $provider->type(),
             'key' => $provider->key($model),
             'locale' => $locale->code,
-        ])->with('success', trans($reviewWorkflowEnabled && $workflowAction === 'submit'
-            ? 'ronove::admin.reviews.submitted'
-            : 'ronove::admin.translations.updated'));
+        ])->with('success', trans(match (true) {
+            $reviewWorkflowEnabled && $workflowAction === 'submit' => 'ronove::admin.reviews.submitted',
+            $status === Translation::PUBLISHED => 'ronove::admin.translations.published',
+            default => 'ronove::admin.translations.updated',
+        }));
     }
 
     public function destroy(
@@ -548,7 +563,7 @@ class TranslationController extends Controller
             ],
             'workflow_action' => [
                 $reviewWorkflowEnabled && $requireWorkflowAction ? 'required' : 'nullable',
-                Rule::in(['save', 'submit']),
+                Rule::in(['save', 'submit', 'publish']),
             ],
             'values' => ['nullable', 'array'],
         ];

@@ -118,9 +118,65 @@ class ReviewWorkflowTest extends TestCase
                 'locale' => $spanish->code,
             ]))
             ->assertOk()
+            ->assertSee(trans('ronove::admin.translations.save_draft'))
+            ->assertSee(trans('ronove::admin.translations.save_publish'))
             ->assertSee(trans('ronove::admin.revisions.title'))
             ->assertSee('Publicación directa')
             ->assertDontSee(trans('ronove::admin.reviews.submit'));
+    }
+
+    public function test_an_authorized_reviewer_can_save_and_publish_from_the_editor_menu(): void
+    {
+        Event::fake([TranslationPublished::class]);
+        Setting::updateSettings([
+            'locale' => 'en',
+            ReviewWorkflow::SETTING_KEY => '1',
+        ]);
+        $admin = $this->user(admin: true);
+        $this->locale('en', true);
+        $spanish = $this->locale('es_ES', true);
+        $post = $this->createPost($admin, 'Review source', 'review-source');
+        $editRoute = route('ronove.admin.translations.edit', [
+            'type' => 'core.post',
+            'key' => $post->id,
+            'locale' => $spanish->code,
+        ]);
+
+        $this->actingAs($admin)
+            ->get($editRoute)
+            ->assertOk()
+            ->assertSee('Save as draft')
+            ->assertSee('Save and publish')
+            ->assertSee('Submit for review');
+
+        $this->actingAs($admin)
+            ->put(route('ronove.admin.translations.update', [
+                'type' => 'core.post',
+                'key' => $post->id,
+            ]), [
+                'locale' => $spanish->code,
+                'workflow_action' => 'publish',
+                'values' => [
+                    'title' => 'Published from menu',
+                    'content' => '<p>Published immediately</p>',
+                ],
+            ])
+            ->assertRedirect($editRoute)
+            ->assertSessionHasNoErrors()
+            ->assertSessionHas('success', 'The translation has been saved and published.');
+
+        $translation = Translation::query()->firstOrFail();
+        $this->assertSame(Translation::PUBLISHED, $translation->status);
+        $this->assertSame(Translation::REVIEW_APPROVED, $translation->review_status);
+        $this->assertSame($admin->id, $translation->reviewed_by);
+        $this->assertSame('Published from menu', $translation->publicValues()['title']);
+        $this->assertDatabaseHas('ronove_translation_revisions', [
+            'translation_id' => $translation->id,
+            'action' => TranslationRevision::APPROVED,
+            'status' => Translation::PUBLISHED,
+            'review_status' => Translation::REVIEW_APPROVED,
+        ]);
+        Event::assertDispatched(TranslationPublished::class);
     }
 
     public function test_pending_edits_keep_the_last_approved_version_public(): void
