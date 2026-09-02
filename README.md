@@ -111,6 +111,14 @@ Every translation editor includes a field-by-field comparison between the origin
 
 The **Update preview** action accepts the current unsaved form values, renders rich text and Markdown with their corresponding presentation, and applies the public fallback chain without writing to the database, changing publication status, adding action logs, or dispatching translation events.
 
+## Glossary and internal notes
+
+The translation center links to a human-maintained glossary. Terms are stored for one target locale and can be global or scoped to a registered integration. An integration-specific term is therefore available to all of that integration's resource providers without leaking into unrelated plugins.
+
+When an original resource contains a glossary term, its preferred translation and optional usage context appear in the translation editor. Matching is case-insensitive, but glossary entries are advisory: Ronove never inserts or replaces text automatically.
+
+Each resource and target locale can also have one internal note. Notes are stored independently from translations, remain private to administrators, and do not create drafts, affect coverage, participate in fallbacks, or appear on public pages. Deleting the source resource removes its notes through the same Ronove resource lifecycle.
+
 ## Integration events
 
 Plugins may listen to the following public events:
@@ -199,7 +207,7 @@ An integrating plugin should include the following manifest dependency so it can
 ```json
 {
     "dependencies": {
-        "ronove": ">=0.8.0"
+        "ronove": ">=0.9.0"
     }
 }
 ```

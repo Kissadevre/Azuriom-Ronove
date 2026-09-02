@@ -3,9 +3,14 @@
 @section('title', trans('ronove::admin.translations.title'))
 
 @section('content')
-    <div class="mb-4">
-        <h1 class="mb-1">{{ trans('ronove::admin.translations.title') }}</h1>
-        <p class="text-body-secondary mb-0">{{ trans('ronove::admin.translations.description') }}</p>
+    <div class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3 mb-4">
+        <div>
+            <h1 class="mb-1">{{ trans('ronove::admin.translations.title') }}</h1>
+            <p class="text-body-secondary mb-0">{{ trans('ronove::admin.translations.description') }}</p>
+        </div>
+        <a class="btn btn-outline-primary align-self-start" href="{{ route('ronove.admin.glossary.index') }}">
+            <i class="bi bi-journal-text me-1" aria-hidden="true"></i> {{ trans('ronove::admin.glossary.title') }}
+        </a>
     </div>
 
     <div class="row g-4">

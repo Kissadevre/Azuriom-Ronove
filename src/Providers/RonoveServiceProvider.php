@@ -74,6 +74,26 @@ class RonoveServiceProvider extends BasePluginServiceProvider
                 'color' => 'danger',
                 'message' => 'ronove::admin.logs.translation_deleted',
             ],
+            'ronove.glossary.saved' => [
+                'icon' => 'journal-text',
+                'color' => 'success',
+                'message' => 'ronove::admin.logs.glossary_saved',
+            ],
+            'ronove.glossary.deleted' => [
+                'icon' => 'trash',
+                'color' => 'danger',
+                'message' => 'ronove::admin.logs.glossary_deleted',
+            ],
+            'ronove.notes.saved' => [
+                'icon' => 'sticky',
+                'color' => 'success',
+                'message' => 'ronove::admin.logs.note_saved',
+            ],
+            'ronove.notes.deleted' => [
+                'icon' => 'trash',
+                'color' => 'danger',
+                'message' => 'ronove::admin.logs.note_deleted',
+            ],
         ]);
     }
 

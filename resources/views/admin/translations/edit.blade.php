@@ -51,6 +51,39 @@
             </div>
         </div>
     @elseif($selectedLocale)
+        <div class="card mb-4">
+            <div class="card-header d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-2">
+                <div>
+                    <h2 class="h5 mb-1">{{ trans('ronove::admin.glossary.suggestions') }}</h2>
+                    <p class="text-body-secondary small mb-0">{{ trans('ronove::admin.glossary.suggestions_help') }}</p>
+                </div>
+                <a class="btn btn-sm btn-outline-primary align-self-start" href="{{ route('ronove.admin.glossary.index', ['scope' => $integration->id, 'locale' => $selectedLocale->code]) }}">
+                    <i class="bi bi-journal-text me-1" aria-hidden="true"></i> {{ trans('ronove::admin.glossary.manage') }}
+                </a>
+            </div>
+            <div class="card-body">
+                @forelse($glossaryTerms as $term)
+                    <div class="@if(! $loop->last) border-bottom pb-3 mb-3 @endif">
+                        <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+                            <strong>{{ $term->source_text }}</strong>
+                            <i class="bi bi-arrow-right text-body-secondary" aria-hidden="true"></i>
+                            <span>{{ $term->translated_text }}</span>
+                            <span class="badge text-bg-secondary">
+                                {{ $term->scope === \Azuriom\Plugin\Ronove\Models\GlossaryTerm::GLOBAL_SCOPE
+                                    ? trans('ronove::admin.glossary.global_scope')
+                                    : $integration->label() }}
+                            </span>
+                        </div>
+                        @if($term->context)
+                            <small class="text-body-secondary">{{ $term->context }}</small>
+                        @endif
+                    </div>
+                @empty
+                    <span class="text-body-secondary">{{ trans('ronove::admin.glossary.no_suggestions') }}</span>
+                @endforelse
+            </div>
+        </div>
+
         <form action="{{ route('ronove.admin.translations.update', ['type' => $provider->type(), 'key' => $provider->key($resourceModel)]) }}" method="POST">
             @csrf
             @method('PUT')
@@ -159,6 +192,41 @@
 
         @if($translation)
             <form id="deleteTranslationForm" action="{{ route('ronove.admin.translations.destroy', ['type' => $provider->type(), 'key' => $provider->key($resourceModel), 'locale' => $selectedLocale]) }}" method="POST" class="d-none">
+                @csrf
+                @method('DELETE')
+            </form>
+        @endif
+
+        <div class="card mt-4">
+            <div class="card-header">
+                <h2 class="h5 mb-1">{{ trans('ronove::admin.translations.note_title') }}</h2>
+                <p class="text-body-secondary small mb-0">{{ trans('ronove::admin.translations.note_description') }}</p>
+            </div>
+            <div class="card-body">
+                <form action="{{ route('ronove.admin.translations.notes.update', ['type' => $provider->type(), 'key' => $provider->key($resourceModel), 'locale' => $selectedLocale]) }}" method="POST">
+                    @csrf
+                    @method('PUT')
+                    <label class="form-label" for="translationNote">{{ trans('ronove::admin.translations.note_title') }}</label>
+                    <textarea class="form-control @error('note') is-invalid @enderror" id="translationNote" name="note" rows="4" maxlength="5000" placeholder="{{ trans('ronove::admin.translations.note_placeholder') }}" required>{{ old('note', $translationNote?->note) }}</textarea>
+                    @error('note')
+                        <span class="invalid-feedback"><strong>{{ $message }}</strong></span>
+                    @enderror
+                    <div class="d-flex flex-wrap gap-2 mt-3">
+                        <button class="btn btn-primary" type="submit">
+                            <i class="bi bi-save me-1" aria-hidden="true"></i> {{ trans('messages.actions.save') }}
+                        </button>
+                        @if($translationNote)
+                            <button class="btn btn-outline-danger" type="submit" form="deleteTranslationNoteForm">
+                                <i class="bi bi-trash me-1" aria-hidden="true"></i> {{ trans('messages.actions.delete') }}
+                            </button>
+                        @endif
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        @if($translationNote)
+            <form id="deleteTranslationNoteForm" action="{{ route('ronove.admin.translations.notes.destroy', ['type' => $provider->type(), 'key' => $provider->key($resourceModel), 'locale' => $selectedLocale]) }}" method="POST" class="d-none">
                 @csrf
                 @method('DELETE')
             </form>

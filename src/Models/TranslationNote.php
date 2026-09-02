@@ -5,23 +5,23 @@ namespace Azuriom\Plugin\Ronove\Models;
 use Azuriom\Models\Traits\HasTablePrefix;
 use Illuminate\Database\Eloquent\Model;
 
-class Resource extends Model
+class TranslationNote extends Model
 {
     use HasTablePrefix;
 
     protected string $prefix = 'ronove_';
 
     protected $fillable = [
-        'resource_type', 'resource_key',
+        'resource_id', 'locale_id', 'note',
     ];
 
-    public function translations()
+    public function resource()
     {
-        return $this->hasMany(Translation::class);
+        return $this->belongsTo(Resource::class);
     }
 
-    public function notes()
+    public function locale()
     {
-        return $this->hasMany(TranslationNote::class);
+        return $this->belongsTo(Locale::class);
     }
 }

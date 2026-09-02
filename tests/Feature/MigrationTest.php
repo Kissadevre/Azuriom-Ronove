@@ -21,5 +21,11 @@ class MigrationTest extends TestCase
         $this->assertTrue(Schema::hasColumns('ronove_translations', [
             'resource_id', 'locale_id', 'status', 'values', 'source_hash',
         ]));
+        $this->assertTrue(Schema::hasColumns('ronove_glossary_terms', [
+            'scope', 'locale_id', 'source_text', 'source_key', 'translated_text', 'context',
+        ]));
+        $this->assertTrue(Schema::hasColumns('ronove_translation_notes', [
+            'resource_id', 'locale_id', 'note',
+        ]));
     }
 }

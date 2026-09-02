@@ -9,9 +9,11 @@ use Azuriom\Plugin\Ronove\Contracts\ResourceProvider;
 use Azuriom\Plugin\Ronove\Events\TranslationDeleted;
 use Azuriom\Plugin\Ronove\Events\TranslationPublished;
 use Azuriom\Plugin\Ronove\Events\TranslationSaved;
+use Azuriom\Plugin\Ronove\Models\GlossaryTerm;
 use Azuriom\Plugin\Ronove\Models\Locale;
 use Azuriom\Plugin\Ronove\Models\Resource;
 use Azuriom\Plugin\Ronove\Models\Translation;
+use Azuriom\Plugin\Ronove\Models\TranslationNote;
 use Azuriom\Plugin\Ronove\Services\ResourceRegistry;
 use Azuriom\Plugin\Ronove\Services\TranslationCoverage;
 use Azuriom\Plugin\Ronove\Services\TranslationResolver;
@@ -175,16 +177,20 @@ class TranslationController extends Controller
         $resource = Resource::query()
             ->where('resource_type', $provider->type())
             ->where('resource_key', $provider->key($model))
-            ->with(['translations.locale'])
+            ->with(['translations.locale', 'notes.locale'])
             ->first();
         $translation = $selectedLocale === null
             ? null
             : $resource?->translations->firstWhere('locale_id', $selectedLocale->id);
+        $note = $selectedLocale === null
+            ? null
+            : $resource?->notes->firstWhere('locale_id', $selectedLocale->id);
         $editorValues ??= $translation?->values ?? [];
         $formStatus ??= $translation?->status ?? Translation::DRAFT;
+        $integration = $registry->integrationFor($provider->type());
 
         return view('ronove::admin.translations.edit', [
-            'integration' => $registry->integrationFor($provider->type()),
+            'integration' => $integration,
             'provider' => $provider,
             'resourceModel' => $model,
             'resourceRecord' => $resource,
@@ -192,6 +198,7 @@ class TranslationController extends Controller
             'selectedLocale' => $selectedLocale,
             'showOriginal' => $showOriginal,
             'translation' => $translation,
+            'translationNote' => $note,
             'sourceHash' => $resolver->sourceHash($provider, $model),
             'canPublish' => Gate::allows('ronove.publish'),
             'editorValues' => $editorValues,
@@ -200,6 +207,9 @@ class TranslationController extends Controller
             'previewFields' => $selectedLocale === null
                 ? []
                 : $resolver->preview($provider->type(), $model, $selectedLocale->code, $editorValues),
+            'glossaryTerms' => $selectedLocale === null
+                ? collect()
+                : $this->glossarySuggestions($integration, $provider, $model, $selectedLocale),
         ]);
     }
 
@@ -292,7 +302,9 @@ class TranslationController extends Controller
         $translation = $resource?->translations()->where('locale_id', $locale->id)->first();
         $translation?->delete();
 
-        if ($resource !== null && ! $resource->translations()->exists()) {
+        if ($resource !== null
+            && ! $resource->translations()->exists()
+            && ! $resource->notes()->exists()) {
             $resource->delete();
         }
 
@@ -315,6 +327,79 @@ class TranslationController extends Controller
             'key' => $provider->key($model),
             'locale' => $locale->code,
         ])->with('success', trans('ronove::admin.translations.deleted'));
+    }
+
+    public function updateNote(
+        Request $request,
+        ResourceRegistry $registry,
+        string $type,
+        string $key,
+        Locale $locale,
+    ) {
+        $provider = $this->provider($registry, $type);
+        $model = $this->model($provider, $key);
+        abort_unless($locale->is_enabled, 404);
+        $validated = $request->validate([
+            'note' => ['required', 'string', 'not_regex:/^\s*$/u', 'max:5000'],
+        ]);
+        $resource = Resource::query()->firstOrCreate([
+            'resource_type' => $provider->type(),
+            'resource_key' => $provider->key($model),
+        ]);
+
+        TranslationNote::query()->updateOrCreate(
+            [
+                'resource_id' => $resource->id,
+                'locale_id' => $locale->id,
+            ],
+            ['note' => trim($validated['note'])],
+        );
+
+        ActionLog::log('ronove.notes.saved', data: [
+            'resource' => $provider->type().':'.$provider->key($model),
+            'locale' => $locale->code,
+        ]);
+
+        return to_route('ronove.admin.translations.edit', [
+            'type' => $provider->type(),
+            'key' => $provider->key($model),
+            'locale' => $locale->code,
+        ])->with('success', trans('ronove::admin.translations.note_saved'));
+    }
+
+    public function destroyNote(
+        ResourceRegistry $registry,
+        string $type,
+        string $key,
+        Locale $locale,
+    ) {
+        $provider = $this->provider($registry, $type);
+        $model = $this->model($provider, $key);
+        $resource = Resource::query()
+            ->where('resource_type', $provider->type())
+            ->where('resource_key', $provider->key($model))
+            ->first();
+        $note = $resource?->notes()->where('locale_id', $locale->id)->first();
+        $note?->delete();
+
+        if ($resource !== null
+            && ! $resource->translations()->exists()
+            && ! $resource->notes()->exists()) {
+            $resource->delete();
+        }
+
+        if ($note !== null) {
+            ActionLog::log('ronove.notes.deleted', data: [
+                'resource' => $provider->type().':'.$provider->key($model),
+                'locale' => $locale->code,
+            ]);
+        }
+
+        return to_route('ronove.admin.translations.edit', [
+            'type' => $provider->type(),
+            'key' => $provider->key($model),
+            'locale' => $locale->code,
+        ])->with('success', trans('ronove::admin.translations.note_deleted'));
     }
 
     private function provider(ResourceRegistry $registry, string $type): ResourceProvider
@@ -363,6 +448,38 @@ class TranslationController extends Controller
             ->only(array_keys($provider->fields()))
             ->filter(fn ($value) => is_string($value) && trim($value) !== '')
             ->all();
+    }
+
+    /**
+     * @return Collection<int, GlossaryTerm>
+     */
+    private function glossarySuggestions(
+        TranslationIntegration $integration,
+        ResourceProvider $provider,
+        Model $model,
+        Locale $locale,
+    ): Collection {
+        $source = collect(array_keys($provider->fields()))
+            ->map(fn (string $field) => $provider->original($model, $field))
+            ->filter(fn ($value) => is_string($value) && $value !== '')
+            ->map(fn (string $value) => html_entity_decode(strip_tags($value)))
+            ->implode("\n");
+
+        if ($source === '') {
+            return collect();
+        }
+
+        return GlossaryTerm::query()
+            ->where('locale_id', $locale->id)
+            ->whereIn('scope', [GlossaryTerm::GLOBAL_SCOPE, $integration->id])
+            ->get()
+            ->filter(fn (GlossaryTerm $term) => mb_stripos($source, $term->source_text) !== false)
+            ->sortBy(fn (GlossaryTerm $term) => [
+                $term->scope === $integration->id ? 0 : 1,
+                mb_strtolower($term->source_text),
+            ])
+            ->take(20)
+            ->values();
     }
 
     private function model(ResourceProvider $provider, string $key): Model
