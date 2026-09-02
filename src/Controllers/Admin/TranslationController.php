@@ -196,10 +196,11 @@ class TranslationController extends Controller
     ) {
         $locales = Locale::query()->where('is_enabled', true)->translationTargets()->orderBy('position')->get();
         $selectedCode = $request->string('locale')->toString();
-        $showOriginal = $selectedCode === '' || $selectedCode === 'original';
-        $selectedLocale = $showOriginal ? null : $locales->firstWhere('code', $selectedCode);
+        $selectedLocale = $selectedCode === ''
+            ? $locales->first()
+            : $locales->firstWhere('code', $selectedCode);
 
-        if (! $showOriginal && $selectedLocale === null) {
+        if ($selectedCode !== '' && $selectedLocale === null) {
             abort(404);
         }
         $resource = Resource::query()
@@ -230,7 +231,6 @@ class TranslationController extends Controller
             'resourceRecord' => $resource,
             'locales' => $locales,
             'selectedLocale' => $selectedLocale,
-            'showOriginal' => $showOriginal,
             'translation' => $translation,
             'translationNote' => $note,
             'sourceHash' => $resolver->sourceHash($provider, $model),
