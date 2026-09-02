@@ -2,32 +2,29 @@
 
 @section('title', trans('ronove::admin.translations.title'))
 
+@include('ronove::admin._assets')
+
 @section('content')
-    <div class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3 mb-4">
-        <div>
-            <h1 class="mb-1">{{ trans('ronove::admin.translations.title') }}</h1>
-            <p class="text-body-secondary mb-0">{{ trans('ronove::admin.translations.description') }}</p>
-        </div>
-        <div class="d-flex flex-wrap gap-2 align-self-start">
-            <a class="btn btn-outline-primary" href="{{ route('ronove.admin.glossary.index') }}">
-                <i class="bi bi-journal-text me-1" aria-hidden="true"></i> {{ trans('ronove::admin.glossary.title') }}
-            </a>
-            @can('ronove.audit')
-                <a class="btn btn-outline-primary" href="{{ route('ronove.admin.audit.index') }}">
-                    <i class="bi bi-shield-check me-1" aria-hidden="true"></i> {{ trans('ronove::admin.audit.title') }}
-                </a>
-            @endcan
-        </div>
-    </div>
+    <div class="ronove-admin-shell">
+    @php($headerActions = [['label' => trans('ronove::admin.glossary.title'), 'url' => route('ronove.admin.glossary.index'), 'icon' => 'bi-journal-text']])
+    @can('ronove.audit')
+        @php($headerActions[] = ['label' => trans('ronove::admin.audit.title'), 'url' => route('ronove.admin.audit.index'), 'icon' => 'bi-shield-check'])
+    @endcan
+    @include('ronove::admin._header', [
+        'title' => trans('ronove::admin.translations.title'),
+        'description' => trans('ronove::admin.translations.description'),
+        'icon' => 'bi-translate',
+        'actions' => $headerActions,
+    ])
 
     <div class="row g-4">
         @forelse($integrationGroups as $group)
             @php($integration = $group['integration'])
             <div class="col-md-6 col-xl-4">
-                <div class="card h-100">
+                <div class="card ronove-admin-card ronove-integration-card h-100">
                     <div class="card-body d-flex flex-column">
                         <div class="d-flex align-items-center gap-3 mb-3">
-                            <span class="fs-2 text-primary" aria-hidden="true"><i class="{{ $integration->icon }}"></i></span>
+                            <span class="ronove-integration-icon text-primary" aria-hidden="true"><i class="{{ $integration->icon }}"></i></span>
                             <div>
                                 <h2 class="h5 mb-1">{{ $integration->label() }}</h2>
                                 <span class="text-body-secondary">
@@ -51,8 +48,9 @@
             </div>
         @empty
             <div class="col-12">
-                <div class="alert alert-info mb-0">{{ trans('ronove::admin.translations.no_integrations') }}</div>
+                <div class="ronove-admin-empty"><span class="ronove-admin-empty-icon"><i class="bi bi-puzzle"></i></span><strong>{{ trans('ronove::admin.translations.no_integrations') }}</strong></div>
             </div>
         @endforelse
+    </div>
     </div>
 @endsection

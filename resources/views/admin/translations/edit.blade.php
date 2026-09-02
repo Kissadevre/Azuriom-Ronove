@@ -2,16 +2,12 @@
 
 @section('title', trans('ronove::admin.translations.edit', ['resource' => $provider->title($resourceModel)]))
 
+@include('ronove::admin._assets')
+
 @section('content')
-    <div class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3 mb-4">
-        <div>
-            <a class="text-decoration-none" href="{{ route('ronove.admin.translations.integration', array_filter(['integration' => $integration->id, 'type' => $provider->type(), 'locale' => $selectedLocale?->code])) }}">
-                <i class="bi bi-arrow-left" aria-hidden="true"></i> {{ trans('ronove::admin.translations.back') }}
-            </a>
-            <h1 class="mt-2 mb-1">{{ $provider->title($resourceModel) }}</h1>
-            <small class="text-body-secondary">{{ $provider->type() }}:{{ $provider->key($resourceModel) }}</small>
-        </div>
-    </div>
+    <div class="ronove-admin-shell">
+    <a class="ronove-admin-back" href="{{ route('ronove.admin.translations.integration', array_filter(['integration' => $integration->id, 'type' => $provider->type(), 'locale' => $selectedLocale?->code])) }}"><i class="bi bi-arrow-left" aria-hidden="true"></i>{{ trans('ronove::admin.translations.back') }}</a>
+    @include('ronove::admin._header', ['title' => $provider->title($resourceModel), 'description' => $provider->type().':'.$provider->key($resourceModel), 'icon' => 'bi-pencil-square'])
 
     <ul class="nav nav-tabs mb-4" role="tablist">
         <li class="nav-item" role="presentation">
@@ -46,7 +42,7 @@
 
     @if($showOriginal)
         <div class="alert alert-info">{{ trans('ronove::admin.translations.original_help') }}</div>
-        <div class="card">
+        <div class="card ronove-admin-card">
             <div class="card-body">
                 @foreach($provider->fields() as $field => $definition)
                     <div class="mb-3 @if($loop->last) mb-0 @endif">
@@ -89,7 +85,7 @@
             </div>
         @endif
 
-        <div class="card mb-4">
+        <div class="card ronove-admin-card mb-4">
             <div class="card-header d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-2">
                 <div>
                     <h2 class="h5 mb-1">{{ trans('ronove::admin.glossary.suggestions') }}</h2>
@@ -149,7 +145,7 @@
                 </div>
             @endif
 
-            <div class="card mb-4">
+            <div class="card ronove-admin-card mb-4">
                 <div class="card-body">
                     @foreach($provider->fields() as $field => $definition)
                         @php($fieldValue = old('values.'.$field, $editorValues[$field] ?? ''))
@@ -171,7 +167,7 @@
                 </div>
             </div>
 
-            <div class="card mb-4">
+            <div class="card ronove-admin-card mb-4">
                 <div class="card-header">
                     <h2 class="h5 mb-1">{{ trans('ronove::admin.translations.preview_title') }}</h2>
                     <p class="text-body-secondary small mb-0">{{ trans('ronove::admin.translations.preview_description') }}</p>
@@ -249,7 +245,7 @@
         @endif
 
         @if($reviewWorkflowEnabled && $translation?->review_status === \Azuriom\Plugin\Ronove\Models\Translation::REVIEW_PENDING)
-            <div class="card mt-4 border-info">
+            <div class="card ronove-admin-card mt-4 border-info">
                 <div class="card-header">
                     <h2 class="h5 mb-1">{{ trans('ronove::admin.reviews.panel_title') }}</h2>
                     <p class="text-body-secondary small mb-0">{{ trans('ronove::admin.reviews.panel_description') }}</p>
@@ -282,7 +278,7 @@
         @endif
 
         @if($translation && $revisions->isNotEmpty())
-            <div class="card mt-4">
+            <div class="card ronove-admin-card mt-4">
                 <div class="card-header">
                     <h2 class="h5 mb-1">{{ trans('ronove::admin.revisions.title') }}</h2>
                     <p class="text-body-secondary small mb-0">{{ trans('ronove::admin.revisions.description') }}</p>
@@ -338,7 +334,7 @@
             </div>
         @endif
 
-        <div class="card mt-4">
+        <div class="card ronove-admin-card mt-4">
             <div class="card-header">
                 <h2 class="h5 mb-1">{{ trans('ronove::admin.translations.note_title') }}</h2>
                 <p class="text-body-secondary small mb-0">{{ trans('ronove::admin.translations.note_description') }}</p>
@@ -375,4 +371,5 @@
     @else
         <div class="alert alert-info">{{ trans('ronove::admin.translations.no_languages') }}</div>
     @endif
+    </div>
 @endsection

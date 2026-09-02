@@ -2,19 +2,12 @@
 
 @section('title', $integration->label())
 
+@include('ronove::admin._assets')
+
 @section('content')
-    <div class="mb-4">
-        <a class="text-decoration-none" href="{{ route('ronove.admin.translations.index') }}">
-            <i class="bi bi-arrow-left" aria-hidden="true"></i> {{ trans('ronove::admin.translations.back_to_center') }}
-        </a>
-        <div class="d-flex align-items-center gap-3 mt-2">
-            <span class="fs-2 text-primary" aria-hidden="true"><i class="{{ $integration->icon }}"></i></span>
-            <div>
-                <h1 class="mb-1">{{ $integration->label() }}</h1>
-                <p class="text-body-secondary mb-0">{{ trans('ronove::admin.translations.integration_description') }}</p>
-            </div>
-        </div>
-    </div>
+    <div class="ronove-admin-shell">
+    <a class="ronove-admin-back" href="{{ route('ronove.admin.translations.index') }}"><i class="bi bi-arrow-left" aria-hidden="true"></i>{{ trans('ronove::admin.translations.back_to_center') }}</a>
+    @include('ronove::admin._header', ['title' => $integration->label(), 'description' => trans('ronove::admin.translations.integration_description'), 'icon' => str_replace('bi ', '', $integration->icon)])
 
     @if($providers->count() > 1)
         <ul class="nav nav-tabs mb-4">
@@ -43,18 +36,18 @@
                 'outdated' => ['value' => $coverage->count('outdated'), 'color' => 'danger'],
             ] as $coverageStatus => $metric)
                 <div class="col-6 col-md">
-                    <div class="card h-100 border-{{ $metric['color'] }}">
-                        <div class="card-body py-3">
+                    <div class="ronove-admin-stat">
+                        <div>
                             <div class="text-body-secondary small">{{ trans('ronove::admin.translations.coverage_status.'.$coverageStatus) }}</div>
                             <div class="fs-4 fw-semibold text-{{ $metric['color'] }}">{{ $metric['value'] }}</div>
-                        </div>
+                        </div><span class="ronove-admin-stat-icon text-{{ $metric['color'] }} bg-{{ $metric['color'] }} bg-opacity-10" aria-hidden="true"><i class="bi bi-bar-chart"></i></span>
                     </div>
                 </div>
             @endforeach
         </div>
     @endif
 
-    <form class="card card-body mb-4" action="{{ route('ronove.admin.translations.integration', $integration->id) }}" method="GET">
+    <form class="ronove-admin-toolbar mb-4" action="{{ route('ronove.admin.translations.integration', $integration->id) }}" method="GET">
         <input type="hidden" name="type" value="{{ $provider->type() }}">
         <div class="row g-3 align-items-end">
             <div class="col-md-4 col-xl-3">
@@ -98,9 +91,9 @@
         </div>
     </form>
 
-    <div class="card">
+    <div class="card ronove-admin-card">
         <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
+            <table class="table ronove-admin-table table-hover align-middle mb-0">
                 <thead>
                     <tr>
                         <th>{{ trans('ronove::admin.translations.resource') }}</th>
@@ -149,7 +142,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="3" class="text-center text-body-secondary py-5">{{ trans('ronove::admin.translations.empty') }}</td>
+                            <td colspan="3"><div class="ronove-admin-empty"><span class="ronove-admin-empty-icon"><i class="bi bi-search"></i></span><strong>{{ trans('ronove::admin.translations.empty') }}</strong></div></td>
                         </tr>
                     @endforelse
                 </tbody>
@@ -158,4 +151,5 @@
     </div>
 
     <div class="mt-3">{{ $resources->links() }}</div>
+    </div>
 @endsection

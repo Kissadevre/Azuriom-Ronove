@@ -1,0 +1,130 @@
+.ronove-admin-layout-title { display: none; }
+
+.ronove-admin-shell { --ronove-radius: .9rem; }
+
+.ronove-admin-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.ronove-admin-heading { display: flex; min-width: 0; align-items: center; gap: 1rem; }
+.ronove-admin-header-copy { min-width: 0; }
+.ronove-admin-header-icon,
+.ronove-admin-stat-icon,
+.ronove-admin-empty-icon {
+    display: inline-grid;
+    flex: 0 0 auto;
+    place-items: center;
+}
+.ronove-admin-header-icon { width: 3.25rem; height: 3.25rem; border-radius: .8rem; font-size: 1.35rem; }
+.ronove-admin-eyebrow {
+    display: block;
+    margin-bottom: .25rem;
+    color: var(--bs-primary-text-emphasis, var(--bs-primary));
+    font-size: .7rem;
+    font-weight: 800;
+    letter-spacing: .075em;
+    line-height: 1;
+    text-transform: uppercase;
+}
+.ronove-admin-header h1 { margin: 0; font-size: clamp(1.55rem, 3vw, 2rem); font-weight: 750; overflow-wrap: anywhere; }
+.ronove-admin-header p { margin: .25rem 0 0; color: var(--bs-secondary-color, var(--bs-secondary)); }
+.ronove-admin-header-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: .5rem; margin-left: auto; }
+
+.ronove-admin-back {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    margin-bottom: 1rem;
+    font-size: .875rem;
+    font-weight: 650;
+    text-decoration: none;
+}
+
+.ronove-admin-card {
+    overflow: hidden;
+    border-color: var(--bs-border-color-translucent, var(--bs-border-color));
+    border-radius: var(--ronove-radius);
+    box-shadow: 0 .35rem 1rem rgba(20, 30, 55, .055);
+}
+.ronove-admin-card > .card-header {
+    min-height: 3.75rem;
+    padding: .9rem 1.15rem;
+    background: linear-gradient(135deg, rgba(var(--bs-primary-rgb), .045), transparent 70%), var(--bs-body-bg);
+}
+
+.ronove-admin-stat {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    height: 100%;
+    padding: 1rem;
+    border: 1px solid var(--bs-border-color-translucent, var(--bs-border-color));
+    border-radius: var(--ronove-radius);
+    background: var(--bs-body-bg);
+    box-shadow: 0 .25rem 1rem rgba(20, 30, 55, .04);
+}
+.ronove-admin-stat-label { display: block; margin-bottom: .2rem; color: var(--bs-secondary-color, var(--bs-secondary)); font-size: .78rem; }
+.ronove-admin-stat-value { display: block; font-size: 1.55rem; line-height: 1.1; }
+.ronove-admin-stat-icon { width: 2.65rem; height: 2.65rem; border-radius: .75rem; font-size: 1.1rem; }
+
+.ronove-admin-toolbar {
+    padding: 1rem;
+    border: 1px solid var(--bs-border-color-translucent, var(--bs-border-color));
+    border-radius: var(--ronove-radius);
+    background: rgba(var(--bs-primary-rgb), .025);
+}
+.ronove-admin-toolbar .form-label { margin-bottom: .35rem; font-size: .82rem; font-weight: 650; }
+
+.ronove-admin-table thead th {
+    padding-block: .8rem;
+    color: var(--bs-secondary-color, var(--bs-secondary));
+    font-size: .72rem;
+    font-weight: 750;
+    letter-spacing: .045em;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+.ronove-admin-table tbody td { padding-block: .9rem; }
+.ronove-admin-table tbody tr:last-child > td { border-bottom-width: 0; }
+.ronove-admin-actions { display: inline-flex; align-items: center; justify-content: flex-end; gap: .35rem; }
+.ronove-admin-actions .btn { display: inline-flex; min-width: 2.15rem; min-height: 2.15rem; align-items: center; justify-content: center; }
+
+.ronove-admin-empty {
+    display: flex;
+    min-height: 11rem;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: .45rem;
+    padding: 2rem;
+    color: var(--bs-secondary-color, var(--bs-secondary));
+    text-align: center;
+}
+.ronove-admin-empty-icon { width: 3rem; height: 3rem; margin-bottom: .25rem; border-radius: 50%; color: var(--bs-primary); background: rgba(var(--bs-primary-rgb), .1); font-size: 1.3rem; }
+.ronove-admin-empty strong { color: var(--bs-body-color); }
+
+.ronove-locale-option { cursor: pointer; transition: border-color .15s ease, background-color .15s ease, transform .15s ease; }
+.ronove-locale-option:hover { border-color: rgba(var(--bs-primary-rgb), .45) !important; background: rgba(var(--bs-primary-rgb), .035); }
+.ronove-locale-option:has(input:checked) { border-color: var(--bs-primary) !important; background: rgba(var(--bs-primary-rgb), .08); }
+.ronove-locale-option:focus-within { outline: .2rem solid rgba(var(--bs-primary-rgb), .2); outline-offset: .1rem; }
+
+.ronove-integration-card { transition: border-color .15s ease, transform .15s ease, box-shadow .15s ease; }
+.ronove-integration-card:hover { border-color: rgba(var(--bs-primary-rgb), .35); transform: translateY(-2px); box-shadow: 0 .55rem 1.35rem rgba(20, 30, 55, .08); }
+.ronove-integration-icon { display: grid; width: 3rem; height: 3rem; flex: 0 0 auto; place-items: center; border-radius: .8rem; background: rgba(var(--bs-primary-rgb), .1); font-size: 1.25rem; }
+
+.ronove-setting-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 1.5rem; padding: 1rem; border: 1px solid var(--bs-border-color-translucent, var(--bs-border-color)); border-radius: .75rem; background: var(--bs-tertiary-bg, var(--bs-body-bg)); }
+.ronove-setting-row .form-check { flex: 0 0 auto; margin: .1rem 0 0; }
+.ronove-sticky-actions { position: sticky; bottom: 1rem; z-index: 5; display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .85rem 1rem; border: 1px solid var(--bs-border-color); border-radius: .8rem; background: var(--bs-body-bg); box-shadow: 0 .4rem 1.2rem rgba(20, 30, 55, .12); }
+
+@media (prefers-reduced-motion: reduce) { .ronove-locale-option, .ronove-integration-card { transition: none; } }
+@media (max-width: 767.98px) {
+    .ronove-admin-header { flex-direction: column; }
+    .ronove-admin-header-actions { width: 100%; justify-content: stretch; margin-left: 0; }
+    .ronove-admin-header-actions .btn { flex: 1 1 auto; }
+    .ronove-setting-row { flex-direction: column; gap: .75rem; }
+    .ronove-sticky-actions { bottom: .5rem; }
+}

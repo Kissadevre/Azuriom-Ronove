@@ -2,21 +2,25 @@
 
 @section('title', trans('ronove::admin.languages.title'))
 
+@include('ronove::admin._assets')
+
 @section('content')
-    <div class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3 mb-4">
-        <div>
-            <h1 class="mb-1">{{ trans('ronove::admin.languages.title') }}</h1>
-            <p class="text-body-secondary mb-0">{{ trans('ronove::admin.languages.description') }}</p>
-        </div>
-        <span class="badge text-bg-secondary align-self-start">
-            {{ trans('ronove::admin.languages.global', ['locale' => $availableLocales->get($globalLocale, $globalLocale)]) }}
-        </span>
+    <div class="ronove-admin-shell">
+    @include('ronove::admin._header', [
+        'title' => trans('ronove::admin.languages.title'),
+        'description' => trans('ronove::admin.languages.description'),
+        'icon' => 'bi-globe2',
+    ])
+
+    <div class="alert alert-info d-flex align-items-center gap-2" role="status">
+        <i class="bi bi-translate" aria-hidden="true"></i>
+        <span>{{ trans('ronove::admin.languages.global', ['locale' => $availableLocales->get($globalLocale, $globalLocale)]) }}</span>
     </div>
 
     <form action="{{ route('ronove.admin.languages.update') }}" method="POST">
         @csrf
 
-        <div class="card mb-4">
+        <div class="card ronove-admin-card mb-4">
             <div class="card-body">
                 @error('locales')
                     <div class="alert alert-danger" role="alert"><strong>{{ $message }}</strong></div>
@@ -29,7 +33,7 @@
                             ? in_array($code, old('locales', []), true)
                             : ($configuredLocales->get($normalizedCode)?->is_enabled ?? $normalizedCode === $globalLocale))
                         <div class="col-md-6 col-xl-4">
-                            <label class="border rounded p-3 d-flex align-items-center gap-3 h-100" for="locale{{ $loop->index }}">
+                            <label class="ronove-locale-option border rounded p-3 d-flex align-items-center gap-3 h-100" for="locale{{ $loop->index }}">
                                 <input class="form-check-input mt-0" id="locale{{ $loop->index }}" type="checkbox" name="locales[]" value="{{ $code }}" @checked($enabled)>
                                 <span>
                                     <strong class="d-block">{{ $name }}</strong>
@@ -42,7 +46,7 @@
             </div>
         </div>
 
-        <button type="submit" class="btn btn-primary">
+        <button type="submit" class="btn btn-primary mb-2">
             <i class="bi bi-save me-1" aria-hidden="true"></i> {{ trans('messages.actions.save') }}
         </button>
     </form>
@@ -58,7 +62,7 @@
         <form action="{{ route('ronove.admin.languages.fallbacks.update') }}" method="POST">
             @csrf
 
-            <div class="card mb-4">
+            <div class="card ronove-admin-card mb-4">
                 <div class="card-body">
                     <div class="row g-3">
                         @foreach($enabledLocales as $locale)
@@ -94,4 +98,5 @@
             </button>
         </form>
     @endif
+    </div>
 @endsection

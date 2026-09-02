@@ -1,6 +1,7 @@
 <?php
 
 return [
+    'eyebrow' => 'Ronove administration',
     'title' => 'Ronove',
     'nav' => [
         'settings' => 'Settings',

@@ -2,20 +2,16 @@
 
 @section('title', trans('ronove::admin.glossary.title'))
 
+@include('ronove::admin._assets')
+
 @section('content')
+    <div class="ronove-admin-shell">
     @php($editingTerm = old('editing_term'))
 
-    <div class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3 mb-4">
-        <div>
-            <a class="text-decoration-none" href="{{ route('ronove.admin.translations.index') }}">
-                <i class="bi bi-arrow-left" aria-hidden="true"></i> {{ trans('ronove::admin.translations.back_to_center') }}
-            </a>
-            <h1 class="mt-2 mb-1">{{ trans('ronove::admin.glossary.title') }}</h1>
-            <p class="text-body-secondary mb-0">{{ trans('ronove::admin.glossary.description') }}</p>
-        </div>
-    </div>
+    <a class="ronove-admin-back" href="{{ route('ronove.admin.translations.index') }}"><i class="bi bi-arrow-left" aria-hidden="true"></i>{{ trans('ronove::admin.translations.back_to_center') }}</a>
+    @include('ronove::admin._header', ['title' => trans('ronove::admin.glossary.title'), 'description' => trans('ronove::admin.glossary.description'), 'icon' => 'bi-journal-text'])
 
-    <form class="card card-body mb-4" action="{{ route('ronove.admin.glossary.index') }}" method="GET">
+    <form class="ronove-admin-toolbar mb-4" action="{{ route('ronove.admin.glossary.index') }}" method="GET">
         <div class="row g-3 align-items-end">
             <div class="col-md-4">
                 <label class="form-label" for="glossaryScope">{{ trans('ronove::admin.glossary.scope') }}</label>
@@ -47,7 +43,7 @@
     @if($selectedLocale === null)
         <div class="alert alert-info">{{ trans('ronove::admin.glossary.no_languages') }}</div>
     @else
-        <div class="card mb-4">
+        <div class="card ronove-admin-card mb-4">
             <div class="card-header">
                 <h2 class="h5 mb-0">{{ trans('ronove::admin.glossary.add') }}</h2>
             </div>
@@ -100,7 +96,7 @@
 
         @forelse($terms as $term)
             @php($isEditingTerm = (string) $editingTerm === (string) $term->id)
-            <form class="card mb-3" action="{{ route('ronove.admin.glossary.update', $term) }}" method="POST">
+            <form class="card ronove-admin-card mb-3" action="{{ route('ronove.admin.glossary.update', $term) }}" method="POST">
                 @csrf
                 @method('PUT')
                 <input type="hidden" name="scope" value="{{ $selectedScope }}">
@@ -155,4 +151,5 @@
 
         <div class="mt-3">{{ $terms->links() }}</div>
     @endif
+    </div>
 @endsection

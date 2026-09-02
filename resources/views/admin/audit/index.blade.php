@@ -2,21 +2,12 @@
 
 @section('title', trans('ronove::admin.audit.title'))
 
+@include('ronove::admin._assets')
+
 @section('content')
-    <div class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3 mb-4">
-        <div>
-            @can('ronove.translations')
-                <a class="text-decoration-none" href="{{ route('ronove.admin.translations.index') }}">
-                    <i class="bi bi-arrow-left" aria-hidden="true"></i> {{ trans('ronove::admin.audit.back') }}
-                </a>
-            @endcan
-            <h1 class="mt-2 mb-1">{{ trans('ronove::admin.audit.title') }}</h1>
-            <p class="text-body-secondary mb-0">{{ trans('ronove::admin.audit.description') }}</p>
-        </div>
-        <a class="btn btn-outline-primary align-self-start" href="{{ route('ronove.admin.audit.index') }}">
-            <i class="bi bi-arrow-clockwise me-1" aria-hidden="true"></i> {{ trans('messages.actions.refresh') }}
-        </a>
-    </div>
+    <div class="ronove-admin-shell">
+    @can('ronove.translations')<a class="ronove-admin-back" href="{{ route('ronove.admin.translations.index') }}"><i class="bi bi-arrow-left" aria-hidden="true"></i>{{ trans('ronove::admin.audit.back') }}</a>@endcan
+    @include('ronove::admin._header', ['title' => trans('ronove::admin.audit.title'), 'description' => trans('ronove::admin.audit.description'), 'icon' => 'bi-shield-check', 'actions' => [['label' => trans('messages.actions.refresh'), 'url' => route('ronove.admin.audit.index'), 'icon' => 'bi-arrow-clockwise']]])
 
     <div class="alert alert-info" role="status">
         <i class="bi bi-info-circle me-1" aria-hidden="true"></i>
@@ -67,7 +58,7 @@
             @php($categoryIssues = $report->issuesFor($category))
             @continue($categoryIssues->isEmpty())
 
-            <section class="card mb-4">
+            <section class="card ronove-admin-card mb-4">
                 <div class="card-header d-flex flex-column flex-lg-row align-items-lg-start justify-content-between gap-3">
                     <div>
                         <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
@@ -122,4 +113,5 @@
             </section>
         @endforeach
     @endif
+    </div>
 @endsection
