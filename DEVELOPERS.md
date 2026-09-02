@@ -1,4 +1,4 @@
-# Ronove 1.0 developer integration guide
+# Ronove 1.1 developer integration guide
 
 This document is the public integration contract for Azuriom plugins, themes, and automated coding agents that need to work with Ronove.
 
@@ -45,6 +45,7 @@ Integrations should use these contracts and APIs instead of querying Ronove's in
 | Translate static interface text from Blade, controllers, validation, or notifications | Normal Laravel/Azuriom language files and `trans()` or `__()` |
 | Translate visible fields stored on an Eloquent model | Register a Ronove `ResourceProvider` |
 | Translate multiple visible settings represented by `Azuriom\Models\Setting` | Register a provider with a stable key for each setting |
+| Translate visible text stored in an active theme configuration | Add a theme `ronove.php` manifest (Ronove 1.1+) |
 | Add a language selector to an existing Bootstrap navbar | Include `ronove::language-selector` |
 | Add language choices to a page, footer, or mobile menu | Include `ronove::language-buttons` |
 | Build completely custom selector markup | Use `app('ronove')->languageOptions()` and `languageUpdateUrl()` |
@@ -525,6 +526,74 @@ Use this only when the matching source resource is being deleted permanently.
 ## Theme integration
 
 Ronove owns language resolution and preference persistence. The theme owns placement and visual design.
+
+### Translatable theme configuration
+
+Ronove 1.1 can discover an optional manifest in the active theme:
+
+```text
+resources/themes/<theme-id>/ronove.php
+```
+
+The manifest groups visible configuration text into translation blocks without requiring a theme service provider. Ronove automatically creates the `theme.<theme-id>` integration, reads the original `themes.config.<theme-id>` setting, and overlays published values onto `config('theme')` for the current public request only. Administrative and JSON requests always receive the stored source configuration.
+
+```php
+<?php
+
+return [
+    'label' => 'theme::theme.ronove.integration',
+    'icon' => 'bi bi-palette',
+    'permission' => 'admin.themes',
+    'order' => 200,
+    'blocks' => [
+        'hero' => [
+            'label' => 'theme::theme.ronove.blocks.hero',
+            'fields' => [
+                'title' => [
+                    'path' => 'home.hero.title',
+                    'label' => 'theme::theme.ronove.fields.hero_title',
+                    'type' => 'text',
+                    'max' => 160,
+                ],
+                'description' => [
+                    'path' => 'home.hero.description',
+                    'label' => 'theme::theme.ronove.fields.hero_description',
+                    'type' => 'textarea',
+                    'max' => 600,
+                ],
+            ],
+        ],
+    ],
+];
+```
+
+The manifest is required in a scope containing `$themeConfig`, the active original configuration array. A theme may use it to build fields for repeatable items:
+
+```php
+foreach (data_get($themeConfig, 'home.services.items', []) as $index => $service) {
+    $id = $service['id']; // Persisted, immutable internal ID.
+
+    $fields[$id.'_title'] = [
+        'path' => "home.services.items.{$index}.title",
+        'label' => 'theme::theme.ronove.fields.item_title',
+        'label_parameters' => ['item' => $service['title']],
+        'type' => 'text',
+        'max' => 120,
+    ];
+}
+```
+
+Manifest rules:
+
+- Block IDs match `^[a-z0-9]+(?:[._-][a-z0-9]+)*$` and field IDs match `^[a-z][a-z0-9_]*$`.
+- Field paths are exact dot-notation paths and may not be duplicated across blocks.
+- Supported types are `text`, `textarea`, `markdown`, and `rich_text`.
+- `label_parameters` may contain only string or integer replacements passed to `trans()`.
+- Only visitor-visible text belongs in the manifest. Never expose URLs, file paths, icons, colors, booleans, order values, limits, IDs, or other operational configuration.
+- Repeatable rows need a persisted immutable internal ID. Do not derive a released field ID from a mutable title or current array index.
+- Removing a field leaves its former Ronove value detectable by the translation audit; do not silently reuse that field ID for another meaning.
+
+The source setting remains unchanged. Ronove restores it before every request and applies all active theme blocks in one translation query, which also prevents locale leakage in long-running workers.
 
 ### Bootstrap navbar dropdown
 
