@@ -231,9 +231,6 @@
                         </ul>
                     </div>
                 @endif
-                <button class="btn btn-outline-primary" type="submit" formaction="{{ route('ronove.admin.translations.preview', ['type' => $provider->type(), 'key' => $provider->key($resourceModel)]) }}">
-                    <i class="bi bi-eye me-1" aria-hidden="true"></i> {{ trans('ronove::admin.translations.preview_action') }}
-                </button>
                 </div>
 
                 @if($translation)

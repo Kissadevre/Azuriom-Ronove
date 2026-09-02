@@ -175,7 +175,6 @@ return [
         'source_changed' => 'El contenido original cambió desde la última vez que se guardó esta traducción. Revísala antes de publicarla.',
         'preview_title' => 'Vista previa y comparación',
         'preview_description' => 'Compara el original con el valor que recibirían los visitantes si se publicara este formulario, después de aplicar los respaldos regionales y globales.',
-        'preview_action' => 'Actualizar vista previa',
         'preview_generated' => 'La vista previa se actualizó con los valores del formulario. No se guardó ni publicó nada.',
         'preview_original' => 'Texto original',
         'translation_target' => 'Traducción en :locale',

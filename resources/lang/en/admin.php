@@ -175,7 +175,6 @@ return [
         'source_changed' => 'The original content changed after this translation was last saved. Review it before publishing.',
         'preview_title' => 'Preview and comparison',
         'preview_description' => 'Compare the original with the value visitors would receive if this form were published, after applying regional and global fallbacks.',
-        'preview_action' => 'Update preview',
         'preview_generated' => 'The preview was updated with the form values. Nothing was saved or published.',
         'preview_original' => 'Original text',
         'translation_target' => ':locale translation',
