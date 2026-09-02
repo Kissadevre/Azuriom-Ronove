@@ -84,7 +84,7 @@
                     <input class="form-control" id="resourceSearch" name="search" value="{{ $searchFilter }}" maxlength="100">
                 </div>
             @endif
-            <div class="col-xl-2 d-flex gap-2">
+            <div class="col-12 ronove-admin-filter-actions">
                 <button class="btn btn-primary" type="submit">{{ trans('ronove::admin.translations.filters.apply') }}</button>
                 <a class="btn btn-outline-secondary" href="{{ route('ronove.admin.translations.integration', ['integration' => $integration->id, 'type' => $provider->type()]) }}">{{ trans('ronove::admin.translations.filters.clear') }}</a>
             </div>

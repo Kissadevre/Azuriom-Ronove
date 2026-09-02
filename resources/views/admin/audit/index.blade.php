@@ -16,27 +16,30 @@
 
     <div class="row g-3 mb-4">
         <div class="col-md-4">
-            <div class="card h-100">
-                <div class="card-body">
-                    <span class="text-body-secondary">{{ trans('ronove::admin.audit.total') }}</span>
-                    <div class="display-6 mt-1">{{ $report->count() }}</div>
+            <div class="ronove-admin-stat">
+                <div>
+                    <span class="ronove-admin-stat-label">{{ trans('ronove::admin.audit.total') }}</span>
+                    <strong class="ronove-admin-stat-value">{{ $report->count() }}</strong>
                 </div>
+                <span class="ronove-admin-stat-icon text-primary bg-primary bg-opacity-10" aria-hidden="true"><i class="bi bi-search"></i></span>
             </div>
         </div>
         <div class="col-md-4">
-            <div class="card h-100 border-warning">
-                <div class="card-body">
-                    <span class="text-body-secondary">{{ trans('ronove::admin.audit.cleanable') }}</span>
-                    <div class="display-6 mt-1">{{ $report->cleanableCount() }}</div>
+            <div class="ronove-admin-stat">
+                <div>
+                    <span class="ronove-admin-stat-label">{{ trans('ronove::admin.audit.cleanable') }}</span>
+                    <strong class="ronove-admin-stat-value text-warning">{{ $report->cleanableCount() }}</strong>
                 </div>
+                <span class="ronove-admin-stat-icon text-warning bg-warning bg-opacity-10" aria-hidden="true"><i class="bi bi-tools"></i></span>
             </div>
         </div>
         <div class="col-md-4">
-            <div class="card h-100 border-info">
-                <div class="card-body">
-                    <span class="text-body-secondary">{{ trans('ronove::admin.audit.informational') }}</span>
-                    <div class="display-6 mt-1">{{ $report->informationalCount() }}</div>
+            <div class="ronove-admin-stat">
+                <div>
+                    <span class="ronove-admin-stat-label">{{ trans('ronove::admin.audit.informational') }}</span>
+                    <strong class="ronove-admin-stat-value text-info">{{ $report->informationalCount() }}</strong>
                 </div>
+                <span class="ronove-admin-stat-icon text-info bg-info bg-opacity-10" aria-hidden="true"><i class="bi bi-eye"></i></span>
             </div>
         </div>
     </div>

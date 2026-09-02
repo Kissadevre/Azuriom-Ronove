@@ -17,14 +17,13 @@
         <input type="hidden" name="review_workflow_enabled" value="0">
 
         <div class="card ronove-admin-card mb-4">
-            <div class="card-header d-flex align-items-center gap-2">
-                <i class="bi bi-arrow-repeat text-primary" aria-hidden="true"></i>
-                <h2 class="h5 mb-0">{{ trans('ronove::admin.settings.review_workflow') }}</h2>
-            </div>
             <div class="card-body">
                 <div class="ronove-setting-row">
                     <div>
-                        <label class="fw-semibold d-block" for="reviewWorkflowEnabled">{{ trans('ronove::admin.settings.review_workflow') }}</label>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="ronove-setting-icon text-primary bg-primary bg-opacity-10" aria-hidden="true"><i class="bi bi-arrow-repeat"></i></span>
+                            <label class="fw-semibold" for="reviewWorkflowEnabled">{{ trans('ronove::admin.settings.review_workflow') }}</label>
+                        </div>
                         <p class="text-body-secondary small mt-1 mb-0">{{ trans('ronove::admin.settings.review_workflow_help') }}</p>
                     </div>
                     <div class="form-check form-switch">
@@ -44,6 +43,7 @@
         </div>
 
         <div class="ronove-sticky-actions">
+            <span class="small text-body-secondary"><i class="bi bi-check2-circle me-1" aria-hidden="true"></i>{{ trans('ronove::admin.settings.save_hint') }}</span>
             <button class="btn btn-primary ms-auto" type="submit"><i class="bi bi-save me-1" aria-hidden="true"></i>{{ trans('messages.actions.save') }}</button>
         </div>
     </form>

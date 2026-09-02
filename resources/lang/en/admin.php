@@ -43,6 +43,7 @@ return [
         'review_workflow' => 'Enable the translation review workflow',
         'review_workflow_help' => 'When enabled, translators save drafts or submit them for review. Only an authorized reviewer can approve and publish a submitted translation. When disabled, the existing direct draft and publish controls remain available.',
         'revisions_help' => 'Revision history is recorded automatically in both modes and never adds an extra step while saving.',
+        'save_hint' => 'Save to apply this workflow to future translation changes.',
         'updated' => 'Ronove settings have been updated.',
     ],
     'languages' => [
@@ -200,6 +201,7 @@ return [
         'restored' => 'The selected revision has been restored as a new draft.',
     ],
     'audit' => [
+        'short_title' => 'Audit',
         'title' => 'Audit and cleanup',
         'description' => 'Inspect Ronove data for obsolete, inconsistent, or orphaned records before choosing what to clean.',
         'back' => 'Back to translation center',

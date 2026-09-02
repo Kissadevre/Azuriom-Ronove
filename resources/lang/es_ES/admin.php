@@ -43,6 +43,7 @@ return [
         'review_workflow' => 'Activar el flujo de revisión de traducciones',
         'review_workflow_help' => 'Cuando está activado, los traductores guardan borradores o los envían a revisión. Solo un revisor autorizado puede aprobar y publicar una traducción enviada. Al desactivarlo, permanecen disponibles los controles actuales para guardar directamente como borrador o publicada.',
         'revisions_help' => 'El historial de revisiones se registra automáticamente en ambos modos y nunca añade un paso adicional al guardar.',
+        'save_hint' => 'Guarda para aplicar este flujo a los próximos cambios de traducción.',
         'updated' => 'Los ajustes de Ronove han sido actualizados.',
     ],
     'languages' => [
@@ -200,6 +201,7 @@ return [
         'restored' => 'La revisión seleccionada ha sido restaurada como un nuevo borrador.',
     ],
     'audit' => [
+        'short_title' => 'Auditoría',
         'title' => 'Auditoría y limpieza',
         'description' => 'Inspecciona los datos de Ronove para detectar registros obsoletos, inconsistentes o huérfanos antes de decidir qué limpiar.',
         'back' => 'Regresar al centro de traducciones',
