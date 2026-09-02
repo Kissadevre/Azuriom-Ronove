@@ -119,6 +119,12 @@ When an original resource contains a glossary term, its preferred translation an
 
 Each resource and target locale can also have one internal note. Notes are stored independently from translations, remain private to administrators, and do not create drafts, affect coverage, participate in fallbacks, or appear on public pages. Deleting the source resource removes its notes through the same Ronove resource lifecycle.
 
+## Audit and cleanup
+
+Administrators with the dedicated `ronove.audit` permission can generate a read-only consistency report from the current database state. The audit detects empty internal resources, unavailable providers, missing original resources, empty or malformed translations, invalid statuses, outdated source hashes, blank notes, unavailable glossary scopes, preferences for disabled languages, and invalid regional fallback chains.
+
+Cleanup is always explicit and limited to one category. Ronove recalculates that category immediately before making changes, records the operation in Azuriom's action log, and preserves valid translation values whenever possible. Deleting translations through cleanup dispatches `TranslationDeleted` just like an individual deletion. Outdated translations are informational and never have an automatic cleanup action because they require human review.
+
 ## Integration events
 
 Plugins may listen to the following public events:
@@ -207,7 +213,7 @@ An integrating plugin should include the following manifest dependency so it can
 ```json
 {
     "dependencies": {
-        "ronove": ">=0.9.0"
+        "ronove": ">=0.10.0"
     }
 }
 ```

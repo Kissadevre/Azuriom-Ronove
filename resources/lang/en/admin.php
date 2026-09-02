@@ -5,6 +5,7 @@ return [
     'nav' => [
         'languages' => 'Languages',
         'translations' => 'Translation center',
+        'audit' => 'Audit and cleanup',
     ],
     'integrations' => [
         'core' => 'Azuriom',
@@ -31,6 +32,7 @@ return [
         'settings' => 'Manage Ronove languages',
         'translations' => 'Manage Ronove translations',
         'publish' => 'Publish Ronove translations',
+        'audit' => 'Audit and clean Ronove data',
     ],
     'languages' => [
         'title' => 'Languages',
@@ -54,6 +56,7 @@ return [
         'glossary_deleted' => 'Deleted a Ronove glossary term.',
         'note_saved' => 'Saved an internal Ronove translation note.',
         'note_deleted' => 'Deleted an internal Ronove translation note.',
+        'audit_cleaned' => 'Cleaned :count Ronove record(s) from the :category audit category.',
     ],
     'glossary' => [
         'title' => 'Glossary',
@@ -138,5 +141,84 @@ return [
         'note_placeholder' => 'Terminology decisions, tone, references, or other context...',
         'note_saved' => 'The internal note has been saved.',
         'note_deleted' => 'The internal note has been deleted.',
+    ],
+    'audit' => [
+        'title' => 'Audit and cleanup',
+        'description' => 'Inspect Ronove data for obsolete, inconsistent, or orphaned records before choosing what to clean.',
+        'back' => 'Back to translation center',
+        'scan_notice' => 'This report is generated from the current database state. Opening or refreshing this page never changes data.',
+        'cleanup_notice' => 'Cleanup actions only affect the selected category. Ronove checks the records again immediately before changing them.',
+        'total' => 'Detected findings',
+        'cleanable' => 'Cleanable findings',
+        'informational' => 'Manual review',
+        'healthy' => 'No audit findings were detected.',
+        'healthy_help' => 'Ronove resources, translations, notes, glossary entries, preferences, and fallbacks are consistent.',
+        'reference' => 'Reference',
+        'locale' => 'Language',
+        'details' => 'Details',
+        'showing' => 'Showing the first :shown of :total findings.',
+        'cleanup' => 'Clean this category',
+        'confirm' => 'Clean every current finding in “:category”? This action cannot be undone.',
+        'cleaned' => '{0} No records required cleanup.|{1} :count record was cleaned.|[2,*] :count records were cleaned.',
+        'manual_only' => 'Manual review required',
+        'record_types' => [
+            'resource' => 'Resource',
+            'translation' => 'Translation',
+            'note' => 'Note',
+            'glossary' => 'Glossary',
+            'preference' => 'Preference',
+            'locale' => 'Language',
+        ],
+        'fallback_reasons' => [
+            'disabled_source' => 'A disabled language still has a regional fallback.',
+            'disabled_target' => 'The fallback chain points to a disabled or unavailable language.',
+            'cycle' => 'The regional fallback chain contains a cycle.',
+        ],
+        'categories' => [
+            'empty_resources' => [
+                'title' => 'Empty Ronove resources',
+                'description' => 'Internal resource records that no longer contain translations or notes. Cleanup deletes only these empty containers.',
+            ],
+            'missing_providers' => [
+                'title' => 'Unavailable resource providers',
+                'description' => 'Data belongs to a resource type that is no longer registered. The integration may have been removed or disabled; cleanup permanently deletes its translations and notes.',
+            ],
+            'missing_sources' => [
+                'title' => 'Missing original resources',
+                'description' => 'Ronove data points to original content that no longer exists. Cleanup deletes the orphaned translations and notes.',
+            ],
+            'empty_translations' => [
+                'title' => 'Empty translations',
+                'description' => 'Translation records contain no usable values. Cleanup deletes them without touching original Azuriom content.',
+            ],
+            'invalid_translation_values' => [
+                'title' => 'Invalid translation fields',
+                'description' => 'Translations contain removed, unknown, blank, or non-text fields. Cleanup keeps valid values and removes invalid ones; a translation with nothing valid left is deleted.',
+            ],
+            'invalid_translation_statuses' => [
+                'title' => 'Invalid translation statuses',
+                'description' => 'Translations use a status other than draft or published. Cleanup safely changes those records to draft.',
+            ],
+            'outdated_translations' => [
+                'title' => 'Outdated translations',
+                'description' => 'The original text changed after these translations were saved. Ronove reports them but never changes or deletes human translations automatically.',
+            ],
+            'blank_notes' => [
+                'title' => 'Blank internal notes',
+                'description' => 'Internal note records contain no text. Cleanup deletes only the empty notes.',
+            ],
+            'unknown_glossary_scopes' => [
+                'title' => 'Unavailable glossary scopes',
+                'description' => 'Glossary terms belong to an integration that is no longer registered. Cleanup permanently deletes those terms.',
+            ],
+            'disabled_locale_preferences' => [
+                'title' => 'Preferences for disabled languages',
+                'description' => 'User preferences point to languages visitors can no longer select. Cleanup removes the obsolete preference so normal language detection can be used.',
+            ],
+            'invalid_fallbacks' => [
+                'title' => 'Invalid regional fallbacks',
+                'description' => 'Fallback chains contain cycles or disabled languages. Cleanup resets the affected fallback to the Azuriom global language.',
+            ],
+        ],
     ],
 ];

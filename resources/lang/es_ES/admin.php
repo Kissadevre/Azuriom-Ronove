@@ -5,6 +5,7 @@ return [
     'nav' => [
         'languages' => 'Idiomas',
         'translations' => 'Centro de traducciones',
+        'audit' => 'Auditoría y limpieza',
     ],
     'integrations' => [
         'core' => 'Azuriom',
@@ -31,6 +32,7 @@ return [
         'settings' => 'Administrar los idiomas de Ronove',
         'translations' => 'Administrar las traducciones de Ronove',
         'publish' => 'Publicar las traducciones de Ronove',
+        'audit' => 'Auditar y limpiar datos de Ronove',
     ],
     'languages' => [
         'title' => 'Idiomas',
@@ -54,6 +56,7 @@ return [
         'glossary_deleted' => 'Eliminó un término del glosario de Ronove.',
         'note_saved' => 'Guardó una nota interna de traducción de Ronove.',
         'note_deleted' => 'Eliminó una nota interna de traducción de Ronove.',
+        'audit_cleaned' => 'Limpió :count registro(s) de Ronove de la categoría de auditoría :category.',
     ],
     'glossary' => [
         'title' => 'Glosario',
@@ -138,5 +141,84 @@ return [
         'note_placeholder' => 'Decisiones terminológicas, tono, referencias u otro contexto...',
         'note_saved' => 'La nota interna ha sido guardada.',
         'note_deleted' => 'La nota interna ha sido eliminada.',
+    ],
+    'audit' => [
+        'title' => 'Auditoría y limpieza',
+        'description' => 'Inspecciona los datos de Ronove para detectar registros obsoletos, inconsistentes o huérfanos antes de decidir qué limpiar.',
+        'back' => 'Regresar al centro de traducciones',
+        'scan_notice' => 'Este informe se genera con el estado actual de la base de datos. Abrir o actualizar esta página nunca modifica datos.',
+        'cleanup_notice' => 'Cada limpieza afecta únicamente la categoría seleccionada. Ronove vuelve a comprobar los registros inmediatamente antes de modificarlos.',
+        'total' => 'Hallazgos detectados',
+        'cleanable' => 'Hallazgos limpiables',
+        'informational' => 'Revisión manual',
+        'healthy' => 'No se detectaron hallazgos de auditoría.',
+        'healthy_help' => 'Los recursos, traducciones, notas, términos del glosario, preferencias y respaldos de Ronove son consistentes.',
+        'reference' => 'Referencia',
+        'locale' => 'Idioma',
+        'details' => 'Detalles',
+        'showing' => 'Se muestran los primeros :shown de :total hallazgos.',
+        'cleanup' => 'Limpiar esta categoría',
+        'confirm' => '¿Limpiar todos los hallazgos actuales de “:category”? Esta acción no se puede deshacer.',
+        'cleaned' => '{0} Ningún registro necesitaba limpieza.|{1} Se limpió :count registro.|[2,*] Se limpiaron :count registros.',
+        'manual_only' => 'Requiere revisión manual',
+        'record_types' => [
+            'resource' => 'Recurso',
+            'translation' => 'Traducción',
+            'note' => 'Nota',
+            'glossary' => 'Glosario',
+            'preference' => 'Preferencia',
+            'locale' => 'Idioma',
+        ],
+        'fallback_reasons' => [
+            'disabled_source' => 'Un idioma deshabilitado todavía tiene un respaldo regional.',
+            'disabled_target' => 'La cadena de respaldo apunta a un idioma deshabilitado o no disponible.',
+            'cycle' => 'La cadena de respaldo regional contiene un ciclo.',
+        ],
+        'categories' => [
+            'empty_resources' => [
+                'title' => 'Recursos vacíos de Ronove',
+                'description' => 'Registros internos que ya no contienen traducciones ni notas. La limpieza elimina únicamente estos contenedores vacíos.',
+            ],
+            'missing_providers' => [
+                'title' => 'Proveedores de recursos no disponibles',
+                'description' => 'Los datos pertenecen a un tipo de recurso que ya no está registrado. La integración pudo eliminarse o deshabilitarse; la limpieza elimina permanentemente sus traducciones y notas.',
+            ],
+            'missing_sources' => [
+                'title' => 'Recursos originales inexistentes',
+                'description' => 'Los datos de Ronove apuntan a contenido original que ya no existe. La limpieza elimina las traducciones y notas huérfanas.',
+            ],
+            'empty_translations' => [
+                'title' => 'Traducciones vacías',
+                'description' => 'Los registros de traducción no contienen valores utilizables. La limpieza los elimina sin modificar el contenido original de Azuriom.',
+            ],
+            'invalid_translation_values' => [
+                'title' => 'Campos de traducción inválidos',
+                'description' => 'Las traducciones contienen campos eliminados, desconocidos, vacíos o que no son texto. La limpieza conserva los valores válidos y elimina los inválidos; si no queda nada válido, elimina la traducción.',
+            ],
+            'invalid_translation_statuses' => [
+                'title' => 'Estados de traducción inválidos',
+                'description' => 'Las traducciones utilizan un estado distinto de borrador o publicada. La limpieza cambia esos registros de forma segura a borrador.',
+            ],
+            'outdated_translations' => [
+                'title' => 'Traducciones desactualizadas',
+                'description' => 'El texto original cambió después de guardar estas traducciones. Ronove las reporta, pero nunca cambia ni elimina automáticamente una traducción humana.',
+            ],
+            'blank_notes' => [
+                'title' => 'Notas internas vacías',
+                'description' => 'Los registros de notas internas no contienen texto. La limpieza elimina únicamente las notas vacías.',
+            ],
+            'unknown_glossary_scopes' => [
+                'title' => 'Alcances de glosario no disponibles',
+                'description' => 'Los términos del glosario pertenecen a una integración que ya no está registrada. La limpieza elimina permanentemente esos términos.',
+            ],
+            'disabled_locale_preferences' => [
+                'title' => 'Preferencias de idiomas deshabilitados',
+                'description' => 'Las preferencias de usuario apuntan a idiomas que los visitantes ya no pueden seleccionar. La limpieza elimina la preferencia obsoleta para volver a utilizar la detección normal.',
+            ],
+            'invalid_fallbacks' => [
+                'title' => 'Respaldos regionales inválidos',
+                'description' => 'Las cadenas de respaldo contienen ciclos o idiomas deshabilitados. La limpieza restablece el respaldo afectado al idioma global de Azuriom.',
+            ],
+        ],
     ],
 ];

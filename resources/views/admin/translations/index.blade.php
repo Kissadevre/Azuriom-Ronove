@@ -8,9 +8,16 @@
             <h1 class="mb-1">{{ trans('ronove::admin.translations.title') }}</h1>
             <p class="text-body-secondary mb-0">{{ trans('ronove::admin.translations.description') }}</p>
         </div>
-        <a class="btn btn-outline-primary align-self-start" href="{{ route('ronove.admin.glossary.index') }}">
-            <i class="bi bi-journal-text me-1" aria-hidden="true"></i> {{ trans('ronove::admin.glossary.title') }}
-        </a>
+        <div class="d-flex flex-wrap gap-2 align-self-start">
+            <a class="btn btn-outline-primary" href="{{ route('ronove.admin.glossary.index') }}">
+                <i class="bi bi-journal-text me-1" aria-hidden="true"></i> {{ trans('ronove::admin.glossary.title') }}
+            </a>
+            @can('ronove.audit')
+                <a class="btn btn-outline-primary" href="{{ route('ronove.admin.audit.index') }}">
+                    <i class="bi bi-shield-check me-1" aria-hidden="true"></i> {{ trans('ronove::admin.audit.title') }}
+                </a>
+            @endcan
+        </div>
     </div>
 
     <div class="row g-4">

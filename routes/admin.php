@@ -1,5 +1,6 @@
 <?php
 
+use Azuriom\Plugin\Ronove\Controllers\Admin\AuditController;
 use Azuriom\Plugin\Ronove\Controllers\Admin\GlossaryController;
 use Azuriom\Plugin\Ronove\Controllers\Admin\LanguageController;
 use Azuriom\Plugin\Ronove\Controllers\Admin\TranslationController;
@@ -34,4 +35,9 @@ Route::prefix('/glossary')->name('glossary.')->middleware('can:ronove.translatio
     Route::post('/', [GlossaryController::class, 'store'])->name('store');
     Route::put('/{term}', [GlossaryController::class, 'update'])->name('update');
     Route::delete('/{term}', [GlossaryController::class, 'destroy'])->name('destroy');
+});
+Route::prefix('/audit')->name('audit.')->middleware('can:ronove.audit')->group(function () {
+    Route::get('/', [AuditController::class, 'index'])->name('index');
+    Route::post('/cleanup/{category}', [AuditController::class, 'cleanup'])
+        ->name('cleanup')->where('category', '[a-z_]+');
 });
