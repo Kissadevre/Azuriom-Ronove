@@ -157,13 +157,21 @@ class PostTranslationTest extends TestCase
         $this->actingAs($admin)
             ->get(route('ronove.admin.translations.edit', $route + ['locale' => $spanish->code]))
             ->assertOk()
+            ->assertSee('This is the original content stored by Azuriom. Ronove never changes it.')
             ->assertSeeInOrder([
                 'Original text',
                 'Original title',
                 'Español translation',
                 'name="values[title]"',
             ], false)
-            ->assertDontSee('Preview and comparison');
+            ->assertDontSee('Preview and comparison')
+            ->assertDontSee('locale=original');
+
+        $this->actingAs($admin)
+            ->get(route('ronove.admin.translations.edit', $route))
+            ->assertOk()
+            ->assertSee('Español translation')
+            ->assertDontSee('locale=original');
 
         $this->actingAs($admin)
             ->from(route('ronove.admin.translations.edit', $route + ['locale' => $spanish->code]))

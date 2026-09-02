@@ -170,7 +170,6 @@ return [
         'empty' => 'No resources are available for this content type.',
         'edit' => 'Translate :resource',
         'back' => 'Back to translations',
-        'original' => 'Original',
         'original_help' => 'This is the original content stored by Azuriom. Ronove never changes it.',
         'empty_fallback' => 'Leave this field empty to display the original value or the configured fallback translation.',
         'source_changed' => 'The original content changed after this translation was last saved. Review it before publishing.',

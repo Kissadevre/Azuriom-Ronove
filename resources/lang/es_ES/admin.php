@@ -170,7 +170,6 @@ return [
         'empty' => 'No hay recursos disponibles para este tipo de contenido.',
         'edit' => 'Traducir :resource',
         'back' => 'Regresar a traducciones',
-        'original' => 'Original',
         'original_help' => 'Este es el contenido original almacenado por Azuriom. Ronove nunca lo modifica.',
         'empty_fallback' => 'Deja este campo vacío para mostrar el valor original o la traducción de respaldo configurada.',
         'source_changed' => 'El contenido original cambió desde la última vez que se guardó esta traducción. Revísala antes de publicarla.',

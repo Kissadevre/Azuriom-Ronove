@@ -9,57 +9,43 @@
     <a class="ronove-admin-back" href="{{ route('ronove.admin.translations.integration', array_filter(['integration' => $integration->id, 'type' => $provider->type(), 'locale' => $selectedLocale?->code])) }}"><i class="bi bi-arrow-left" aria-hidden="true"></i>{{ trans('ronove::admin.translations.back') }}</a>
     @include('ronove::admin._header', ['title' => $provider->title($resourceModel), 'description' => $provider->type().':'.$provider->key($resourceModel), 'icon' => 'bi-pencil-square'])
 
-    <div class="ronove-content-tabs mb-4">
-    <ul class="nav nav-pills flex-nowrap" role="tablist">
-        <li class="nav-item" role="presentation">
-            <a class="nav-link @if($showOriginal) active @endif" href="{{ route('ronove.admin.translations.edit', ['type' => $provider->type(), 'key' => $provider->key($resourceModel), 'locale' => 'original']) }}">
-                {{ trans('ronove::admin.translations.original') }}
-            </a>
-        </li>
-        @foreach($locales as $locale)
-            @php($localeTranslation = $resourceRecord?->translations?->firstWhere('locale_id', $locale->id))
-            <li class="nav-item" role="presentation">
-                <a class="nav-link @if($selectedLocale?->is($locale)) active @endif" href="{{ route('ronove.admin.translations.edit', ['type' => $provider->type(), 'key' => $provider->key($resourceModel), 'locale' => $locale->code]) }}">
-                    @include('ronove::_locale-flag', ['flagCode' => $locale->flag_code])
-                    {{ $locale->native_name }}
-                    @if($localeTranslation)
-                        @php($localeBadge = $reviewWorkflowEnabled
-                            ? match ($localeTranslation->review_status) {
-                                'pending' => 'text-bg-info',
-                                'changes_requested' => 'text-bg-danger',
-                                'approved' => 'text-bg-success',
-                                default => 'text-bg-warning',
-                            }
-                            : ($localeTranslation->isPublished() ? 'text-bg-success' : 'text-bg-warning'))
-                        <span class="badge rounded-pill {{ $localeBadge }} ms-1">
-                            {{ trans($reviewWorkflowEnabled
-                                ? 'ronove::admin.reviews.status.'.$localeTranslation->review_status
-                                : 'ronove::admin.translations.status.'.$localeTranslation->status) }}
-                        </span>
-                    @endif
-                </a>
-            </li>
-        @endforeach
-    </ul>
-    </div>
-
-    @if($showOriginal)
-        <div class="alert alert-info">{{ trans('ronove::admin.translations.original_help') }}</div>
-        <div class="card ronove-admin-card">
-            <div class="card-body">
-                @foreach($provider->fields() as $field => $definition)
-                    <div class="mb-3 @if($loop->last) mb-0 @endif">
-                        <label class="form-label fw-semibold">{{ $definition->label }}</label>
-                        @if($definition->type === \Azuriom\Plugin\Ronove\Support\TranslatableField::RICH_TEXT)
-                            <div class="form-control bg-body-secondary" style="min-height: 8rem">{!! $provider->original($resourceModel, $field) !!}</div>
-                        @else
-                            <div class="form-control bg-body-secondary">{{ $provider->original($resourceModel, $field) }}</div>
+    @if($locales->isNotEmpty())
+        <div class="ronove-content-tabs mb-4">
+        <ul class="nav nav-pills flex-nowrap" role="tablist">
+            @foreach($locales as $locale)
+                @php($localeTranslation = $resourceRecord?->translations?->firstWhere('locale_id', $locale->id))
+                <li class="nav-item" role="presentation">
+                    <a class="nav-link @if($selectedLocale?->is($locale)) active @endif" href="{{ route('ronove.admin.translations.edit', ['type' => $provider->type(), 'key' => $provider->key($resourceModel), 'locale' => $locale->code]) }}">
+                        @include('ronove::_locale-flag', ['flagCode' => $locale->flag_code])
+                        {{ $locale->native_name }}
+                        @if($localeTranslation)
+                            @php($localeBadge = $reviewWorkflowEnabled
+                                ? match ($localeTranslation->review_status) {
+                                    'pending' => 'text-bg-info',
+                                    'changes_requested' => 'text-bg-danger',
+                                    'approved' => 'text-bg-success',
+                                    default => 'text-bg-warning',
+                                }
+                                : ($localeTranslation->isPublished() ? 'text-bg-success' : 'text-bg-warning'))
+                            <span class="badge rounded-pill {{ $localeBadge }} ms-1">
+                                {{ trans($reviewWorkflowEnabled
+                                    ? 'ronove::admin.reviews.status.'.$localeTranslation->review_status
+                                    : 'ronove::admin.translations.status.'.$localeTranslation->status) }}
+                            </span>
                         @endif
-                    </div>
-                @endforeach
-            </div>
+                    </a>
+                </li>
+            @endforeach
+        </ul>
         </div>
-    @elseif($selectedLocale)
+    @endif
+
+    @if($selectedLocale)
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle me-1" aria-hidden="true"></i>
+            {{ trans('ronove::admin.translations.original_help') }}
+        </div>
+
         @if($reviewWorkflowEnabled && $translation)
             @php($reviewColor = match ($translation->review_status) {
                 'pending' => 'info',
