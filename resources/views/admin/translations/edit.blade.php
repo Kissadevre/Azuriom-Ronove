@@ -164,65 +164,56 @@
                 <div class="card-body">
                     @foreach($provider->fields() as $field => $definition)
                         @php($fieldValue = old('values.'.$field, $editorValues[$field] ?? ''))
-                        <div class="mb-3 @if($loop->last) mb-0 @endif">
-                            <label class="form-label fw-semibold" for="translation{{ ucfirst($field) }}">{{ $definition->label }}</label>
-
-                            @if($definition->type === \Azuriom\Plugin\Ronove\Support\TranslatableField::TEXT)
-                                <input class="form-control @error('values.'.$field) is-invalid @enderror" id="translation{{ ucfirst($field) }}" name="values[{{ $field }}]" value="{{ $fieldValue }}" @if($definition->maxLength) maxlength="{{ $definition->maxLength }}" @endif>
-                            @else
-                                <textarea class="form-control @if($definition->type === \Azuriom\Plugin\Ronove\Support\TranslatableField::RICH_TEXT) html-editor @endif @error('values.'.$field) is-invalid @enderror" id="translation{{ ucfirst($field) }}" name="values[{{ $field }}]" rows="8">{{ $fieldValue }}</textarea>
-                            @endif
-
-                            @error('values.'.$field)
-                                <span class="invalid-feedback d-block" role="alert"><strong>{{ $message }}</strong></span>
-                            @enderror
-                            <div class="form-text">{{ trans('ronove::admin.translations.empty_fallback') }}</div>
-                        </div>
-                    @endforeach
-                </div>
-            </div>
-
-            <details class="card ronove-admin-card ronove-editor-disclosure mb-4" @if($previewGenerated) open @endif>
-                <summary class="card-header">
-                    <div>
-                        <h2 class="h5 mb-1">{{ trans('ronove::admin.translations.preview_title') }}</h2>
-                        <p class="text-body-secondary small mb-0">{{ trans('ronove::admin.translations.preview_description') }}</p>
-                    </div>
-                    <span class="ronove-disclosure-meta"><i class="bi bi-chevron-down" aria-hidden="true"></i></span>
-                </summary>
-                <div class="card-body">
-                    @foreach($provider->fields() as $field => $definition)
                         @php($fieldPreview = $previewFields[$field])
                         @php($sourceLocale = $fieldPreview->sourceLocale === null ? null : $locales->firstWhere('code', $fieldPreview->sourceLocale))
-                        <section class="@if(! $loop->last) border-bottom pb-4 mb-4 @endif">
-                            <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
-                                <h3 class="h6 mb-0">{{ $definition->label }}</h3>
-                                <span class="badge text-bg-secondary">
-                                    @if($fieldPreview->source === \Azuriom\Plugin\Ronove\Support\TranslationPreviewField::SELECTED)
-                                        {{ trans('ronove::admin.translations.preview_source_selected', ['locale' => $selectedLocale->native_name]) }}
-                                    @elseif($fieldPreview->source === \Azuriom\Plugin\Ronove\Support\TranslationPreviewField::FALLBACK)
-                                        {{ trans('ronove::admin.translations.preview_source_fallback', ['locale' => $sourceLocale?->native_name ?? $fieldPreview->sourceLocale]) }}
-                                    @elseif($fieldPreview->source === \Azuriom\Plugin\Ronove\Support\TranslationPreviewField::GLOBAL)
-                                        {{ trans('ronove::admin.translations.preview_source_global', ['locale' => $sourceLocale?->native_name ?? $fieldPreview->sourceLocale]) }}
-                                    @else
-                                        {{ trans('ronove::admin.translations.preview_source_original') }}
-                                    @endif
-                                </span>
-                            </div>
-                            <div class="row g-3">
+                        <section class="ronove-translation-field @if(! $loop->last) border-bottom pb-4 mb-4 @endif">
+                            <h3 class="h6 mb-3">{{ $definition->label }}</h3>
+                            <div class="row g-3 align-items-stretch">
                                 <div class="col-lg-6">
                                     <div class="small fw-semibold text-body-secondary mb-1">{{ trans('ronove::admin.translations.preview_original') }}</div>
                                     @include('ronove::admin.translations._preview-value', ['value' => $fieldPreview->original])
                                 </div>
                                 <div class="col-lg-6">
-                                    <div class="small fw-semibold text-body-secondary mb-1">{{ trans('ronove::admin.translations.preview_result') }}</div>
-                                    @include('ronove::admin.translations._preview-value', ['value' => $fieldPreview->value])
+                                    <label class="small fw-semibold text-body-secondary mb-1" for="translation{{ ucfirst($field) }}">
+                                        {{ trans('ronove::admin.translations.translation_target', ['locale' => $selectedLocale->native_name]) }}
+                                    </label>
+
+                                    @if($definition->type === \Azuriom\Plugin\Ronove\Support\TranslatableField::TEXT)
+                                        <input class="form-control @error('values.'.$field) is-invalid @enderror" id="translation{{ ucfirst($field) }}" name="values[{{ $field }}]" value="{{ $fieldValue }}" @if($definition->maxLength) maxlength="{{ $definition->maxLength }}" @endif>
+                                    @else
+                                        <textarea class="form-control @if($definition->type === \Azuriom\Plugin\Ronove\Support\TranslatableField::RICH_TEXT) html-editor @endif @error('values.'.$field) is-invalid @enderror" id="translation{{ ucfirst($field) }}" name="values[{{ $field }}]" rows="8">{{ $fieldValue }}</textarea>
+                                    @endif
+
+                                    @error('values.'.$field)
+                                        <span class="invalid-feedback d-block" role="alert"><strong>{{ $message }}</strong></span>
+                                    @enderror
+                                    <div class="form-text">{{ trans('ronove::admin.translations.empty_fallback') }}</div>
+
+                                    @if($previewGenerated)
+                                        <div class="ronove-inline-preview mt-3">
+                                            <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
+                                                <span class="small fw-semibold text-body-secondary">{{ trans('ronove::admin.translations.preview_result') }}</span>
+                                                <span class="badge text-bg-secondary">
+                                                    @if($fieldPreview->source === \Azuriom\Plugin\Ronove\Support\TranslationPreviewField::SELECTED)
+                                                        {{ trans('ronove::admin.translations.preview_source_selected', ['locale' => $selectedLocale->native_name]) }}
+                                                    @elseif($fieldPreview->source === \Azuriom\Plugin\Ronove\Support\TranslationPreviewField::FALLBACK)
+                                                        {{ trans('ronove::admin.translations.preview_source_fallback', ['locale' => $sourceLocale?->native_name ?? $fieldPreview->sourceLocale]) }}
+                                                    @elseif($fieldPreview->source === \Azuriom\Plugin\Ronove\Support\TranslationPreviewField::GLOBAL)
+                                                        {{ trans('ronove::admin.translations.preview_source_global', ['locale' => $sourceLocale?->native_name ?? $fieldPreview->sourceLocale]) }}
+                                                    @else
+                                                        {{ trans('ronove::admin.translations.preview_source_original') }}
+                                                    @endif
+                                                </span>
+                                            </div>
+                                            @include('ronove::admin.translations._preview-value', ['value' => $fieldPreview->value])
+                                        </div>
+                                    @endif
                                 </div>
                             </div>
                         </section>
                     @endforeach
                 </div>
-            </details>
+            </div>
 
             <div class="ronove-editor-actions">
                 <div class="ronove-editor-actions-primary">
