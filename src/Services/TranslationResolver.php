@@ -6,6 +6,7 @@ use Azuriom\Plugin\Ronove\Contracts\ResourceProvider;
 use Azuriom\Plugin\Ronove\Models\Resource;
 use Azuriom\Plugin\Ronove\Models\Translation;
 use Azuriom\Plugin\Ronove\Support\LocaleCode;
+use Azuriom\Plugin\Ronove\Support\TranslationPreviewField;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use InvalidArgumentException;
@@ -45,7 +46,7 @@ class TranslationResolver
             $provider,
             $model,
             $resource?->translations ?? collect(),
-            LocaleCode::normalize($locale ?? app()->getLocale()),
+            $this->locales->translationChain(LocaleCode::normalize($locale ?? app()->getLocale())),
         );
     }
 
@@ -71,14 +72,76 @@ class TranslationResolver
             ->get()
             ->keyBy('resource_key');
         $locale = LocaleCode::normalize($locale ?? app()->getLocale());
+        $chain = $this->locales->translationChain($locale);
 
         foreach ($models as $model) {
             $translations = $resources->get($provider->key($model))?->translations ?? collect();
 
-            foreach ($this->resolveValues($provider, $model, $translations, $locale) as $field => $value) {
+            foreach ($this->resolveValues($provider, $model, $translations, $chain) as $field => $value) {
                 $model->setAttribute($field, $value);
             }
         }
+    }
+
+    /**
+     * Resolve unsaved values exactly as they would appear if published.
+     *
+     * @param  array<string, string>  $values
+     * @return array<string, TranslationPreviewField>
+     */
+    public function preview(string $type, Model $model, string $locale, array $values): array
+    {
+        $provider = $this->registry->get($type);
+        $this->assertModel($provider, $model);
+        $resource = Resource::query()
+            ->where('resource_type', $type)
+            ->where('resource_key', $provider->key($model))
+            ->with(['translations.locale'])
+            ->first();
+        $published = ($resource?->translations ?? collect())->filter->isPublished();
+        $selected = LocaleCode::normalize($locale);
+        $fallbackChain = array_slice($this->locales->translationChain($selected), 1);
+        $global = $this->locales->globalLocale();
+        $preview = [];
+
+        foreach (array_keys($provider->fields()) as $field) {
+            $original = $provider->original($model, $field);
+            $value = $this->filledArrayValue($values, $field);
+
+            if ($value !== null) {
+                $preview[$field] = new TranslationPreviewField(
+                    $original,
+                    $value,
+                    TranslationPreviewField::SELECTED,
+                    $selected,
+                );
+
+                continue;
+            }
+
+            [$resolved, $sourceLocale] = $this->publishedValue($published, $field, $fallbackChain);
+
+            if ($sourceLocale !== null) {
+                $preview[$field] = new TranslationPreviewField(
+                    $original,
+                    $resolved,
+                    $sourceLocale === $global
+                        ? TranslationPreviewField::GLOBAL
+                        : TranslationPreviewField::FALLBACK,
+                    $sourceLocale,
+                );
+
+                continue;
+            }
+
+            $preview[$field] = new TranslationPreviewField(
+                $original,
+                $original,
+                TranslationPreviewField::ORIGINAL,
+            );
+        }
+
+        return $preview;
     }
 
     public function sourceHash(ResourceProvider $provider, Model $model): string
@@ -94,34 +157,60 @@ class TranslationResolver
 
     /**
      * @param  Collection<int, Translation>  $translations
+     * @param  array<int, string>  $localeChain
      * @return array<string, string|null>
      */
     private function resolveValues(
         ResourceProvider $provider,
         Model $model,
         Collection $translations,
-        string $locale,
+        array $localeChain,
     ): array {
         $published = $translations->filter->isPublished();
-        $selected = $published->first(fn (Translation $translation) => $translation->locale?->code === $locale);
-        $globalCode = $this->locales->globalLocale();
-        $global = $globalCode === $locale
-            ? null
-            : $published->first(fn (Translation $translation) => $translation->locale?->code === $globalCode);
         $values = [];
 
-        foreach ($provider->fields() as $field => $definition) {
-            $translated = $this->filledValue($selected, $field)
-                ?? $this->filledValue($global, $field);
+        foreach (array_keys($provider->fields()) as $field) {
+            [$translated] = $this->publishedValue($published, $field, $localeChain);
             $values[$field] = $translated ?? $provider->original($model, $field);
         }
 
         return $values;
     }
 
+    /**
+     * @param  Collection<int, Translation>  $translations
+     * @param  array<int, string>  $localeChain
+     * @return array{0: string|null, 1: string|null}
+     */
+    private function publishedValue(Collection $translations, string $field, array $localeChain): array
+    {
+        foreach ($localeChain as $locale) {
+            $translation = $translations->first(
+                fn (Translation $translation) => $translation->locale?->code === $locale
+            );
+            $value = $this->filledValue($translation, $field);
+
+            if ($value !== null) {
+                return [$value, $locale];
+            }
+        }
+
+        return [null, null];
+    }
+
     private function filledValue(?Translation $translation, string $field): ?string
     {
         $value = $translation?->values[$field] ?? null;
+
+        return is_string($value) && trim($value) !== '' ? $value : null;
+    }
+
+    /**
+     * @param  array<string, string>  $values
+     */
+    private function filledArrayValue(array $values, string $field): ?string
+    {
+        $value = $values[$field] ?? null;
 
         return is_string($value) && trim($value) !== '' ? $value : null;
     }

@@ -12,12 +12,13 @@ class Locale extends Model
     protected string $prefix = 'ronove_';
 
     protected $fillable = [
-        'code', 'name', 'native_name', 'is_enabled', 'position',
+        'code', 'name', 'native_name', 'is_enabled', 'position', 'fallback_locale_id',
     ];
 
     protected $casts = [
         'is_enabled' => 'boolean',
         'position' => 'integer',
+        'fallback_locale_id' => 'integer',
     ];
 
     public function getRouteKeyName(): string
@@ -28,5 +29,10 @@ class Locale extends Model
     public function translations()
     {
         return $this->hasMany(Translation::class);
+    }
+
+    public function fallback()
+    {
+        return $this->belongsTo(self::class, 'fallback_locale_id');
     }
 }

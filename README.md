@@ -95,7 +95,21 @@ $coverage->keysFor('outdated');
 
 A translation is outdated when its saved source hash no longer matches the provider's current original visible fields. This status is informative: published translations remain publicly available until a human reviews and saves them again. `outdated` can overlap `draft` or `published`; it is not a third persistence status.
 
-Published values resolve per field in this order: selected locale, Azuriom global locale, original value. Drafts are never shown publicly.
+Published values resolve independently per field in this order: selected locale, its configured regional fallback chain, Azuriom global locale, original value. Drafts are never shown publicly, including drafts stored in fallback languages.
+
+## Regional fallbacks
+
+Administrators configure regional fallback chains from Ronove's Languages page. Each enabled locale can point to another enabled locale, for example `es_MX` to `es_ES`. Chains may contain multiple levels, but Ronove rejects self-references and cycles.
+
+The global Azuriom locale is always tried after the configured regional chain. A defensive cycle guard is also applied while resolving content in case locale records were modified outside Ronove. The same chain is installed in Laravel's translator for Azuriom and compatible plugin language files, so interface strings and translated content follow consistent rules.
+
+Disabling a locale clears fallbacks owned by it and references pointing to it. Existing source content and translations are never changed.
+
+## Preview and comparison
+
+Every translation editor includes a field-by-field comparison between the original text and the value visitors would receive if the current form were published. Each resolved value identifies its source as the selected locale, a regional fallback, Azuriom's global locale, or the original text.
+
+The **Update preview** action accepts the current unsaved form values, renders rich text and Markdown with their corresponding presentation, and applies the public fallback chain without writing to the database, changing publication status, adding action logs, or dispatching translation events.
 
 ## Integration events
 
@@ -185,7 +199,7 @@ An integrating plugin should include the following manifest dependency so it can
 ```json
 {
     "dependencies": {
-        "ronove": ">=0.7.0"
+        "ronove": ">=0.8.0"
     }
 }
 ```

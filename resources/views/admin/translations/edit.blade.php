@@ -67,10 +67,17 @@
                 </div>
             @endif
 
+            @if($previewGenerated)
+                <div class="alert alert-info">
+                    <i class="bi bi-eye me-1" aria-hidden="true"></i>
+                    {{ trans('ronove::admin.translations.preview_generated') }}
+                </div>
+            @endif
+
             <div class="card mb-4">
                 <div class="card-body">
                     @foreach($provider->fields() as $field => $definition)
-                        @php($fieldValue = old('values.'.$field, $translation?->values[$field] ?? ''))
+                        @php($fieldValue = old('values.'.$field, $editorValues[$field] ?? ''))
                         <div class="mb-3 @if($loop->last) mb-0 @endif">
                             <label class="form-label fw-semibold" for="translation{{ ucfirst($field) }}">{{ $definition->label }}</label>
 
@@ -89,15 +96,57 @@
                 </div>
             </div>
 
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h2 class="h5 mb-1">{{ trans('ronove::admin.translations.preview_title') }}</h2>
+                    <p class="text-body-secondary small mb-0">{{ trans('ronove::admin.translations.preview_description') }}</p>
+                </div>
+                <div class="card-body">
+                    @foreach($provider->fields() as $field => $definition)
+                        @php($fieldPreview = $previewFields[$field])
+                        @php($sourceLocale = $fieldPreview->sourceLocale === null ? null : $locales->firstWhere('code', $fieldPreview->sourceLocale))
+                        <section class="@if(! $loop->last) border-bottom pb-4 mb-4 @endif">
+                            <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
+                                <h3 class="h6 mb-0">{{ $definition->label }}</h3>
+                                <span class="badge text-bg-secondary">
+                                    @if($fieldPreview->source === \Azuriom\Plugin\Ronove\Support\TranslationPreviewField::SELECTED)
+                                        {{ trans('ronove::admin.translations.preview_source_selected', ['locale' => $selectedLocale->native_name]) }}
+                                    @elseif($fieldPreview->source === \Azuriom\Plugin\Ronove\Support\TranslationPreviewField::FALLBACK)
+                                        {{ trans('ronove::admin.translations.preview_source_fallback', ['locale' => $sourceLocale?->native_name ?? $fieldPreview->sourceLocale]) }}
+                                    @elseif($fieldPreview->source === \Azuriom\Plugin\Ronove\Support\TranslationPreviewField::GLOBAL)
+                                        {{ trans('ronove::admin.translations.preview_source_global', ['locale' => $sourceLocale?->native_name ?? $fieldPreview->sourceLocale]) }}
+                                    @else
+                                        {{ trans('ronove::admin.translations.preview_source_original') }}
+                                    @endif
+                                </span>
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-lg-6">
+                                    <div class="small fw-semibold text-body-secondary mb-1">{{ trans('ronove::admin.translations.preview_original') }}</div>
+                                    @include('ronove::admin.translations._preview-value', ['value' => $fieldPreview->original])
+                                </div>
+                                <div class="col-lg-6">
+                                    <div class="small fw-semibold text-body-secondary mb-1">{{ trans('ronove::admin.translations.preview_result') }}</div>
+                                    @include('ronove::admin.translations._preview-value', ['value' => $fieldPreview->value])
+                                </div>
+                            </div>
+                        </section>
+                    @endforeach
+                </div>
+            </div>
+
             <div class="d-flex flex-wrap gap-2 align-items-center">
                 <select class="form-select w-auto" name="status" aria-label="{{ trans('ronove::admin.translations.status_label') }}">
-                    <option value="draft" @selected(old('status', $translation?->status ?? 'draft') === 'draft')>{{ trans('ronove::admin.translations.status.draft') }}</option>
+                    <option value="draft" @selected(old('status', $formStatus) === 'draft')>{{ trans('ronove::admin.translations.status.draft') }}</option>
                     @if($canPublish)
-                        <option value="published" @selected(old('status', $translation?->status) === 'published')>{{ trans('ronove::admin.translations.status.published') }}</option>
+                        <option value="published" @selected(old('status', $formStatus) === 'published')>{{ trans('ronove::admin.translations.status.published') }}</option>
                     @endif
                 </select>
                 <button class="btn btn-primary" type="submit">
                     <i class="bi bi-save me-1" aria-hidden="true"></i> {{ trans('messages.actions.save') }}
+                </button>
+                <button class="btn btn-outline-primary" type="submit" formaction="{{ route('ronove.admin.translations.preview', ['type' => $provider->type(), 'key' => $provider->key($resourceModel)]) }}">
+                    <i class="bi bi-eye me-1" aria-hidden="true"></i> {{ trans('ronove::admin.translations.preview_action') }}
                 </button>
 
                 @if($translation)

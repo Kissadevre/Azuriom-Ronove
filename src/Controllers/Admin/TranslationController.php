@@ -126,6 +126,44 @@ class TranslationController extends Controller
     ) {
         $provider = $this->provider($registry, $type);
         $model = $this->model($provider, $key);
+
+        return $this->editorView($request, $registry, $provider, $model, $resolver);
+    }
+
+    public function preview(
+        Request $request,
+        ResourceRegistry $registry,
+        string $type,
+        string $key,
+        TranslationResolver $resolver,
+    ) {
+        $provider = $this->provider($registry, $type);
+        $model = $this->model($provider, $key);
+        $validated = $request->validate($this->translationRules($provider));
+        $values = $this->validatedValues($provider, $validated);
+
+        return $this->editorView(
+            $request,
+            $registry,
+            $provider,
+            $model,
+            $resolver,
+            $values,
+            $validated['status'],
+            true,
+        );
+    }
+
+    private function editorView(
+        Request $request,
+        ResourceRegistry $registry,
+        ResourceProvider $provider,
+        Model $model,
+        TranslationResolver $resolver,
+        ?array $editorValues = null,
+        ?string $formStatus = null,
+        bool $previewGenerated = false,
+    ) {
         $locales = Locale::query()->where('is_enabled', true)->orderBy('position')->get();
         $selectedCode = $request->string('locale')->toString();
         $showOriginal = $selectedCode === '' || $selectedCode === 'original';
@@ -142,6 +180,8 @@ class TranslationController extends Controller
         $translation = $selectedLocale === null
             ? null
             : $resource?->translations->firstWhere('locale_id', $selectedLocale->id);
+        $editorValues ??= $translation?->values ?? [];
+        $formStatus ??= $translation?->status ?? Translation::DRAFT;
 
         return view('ronove::admin.translations.edit', [
             'integration' => $registry->integrationFor($provider->type()),
@@ -154,6 +194,12 @@ class TranslationController extends Controller
             'translation' => $translation,
             'sourceHash' => $resolver->sourceHash($provider, $model),
             'canPublish' => Gate::allows('ronove.publish'),
+            'editorValues' => $editorValues,
+            'formStatus' => $formStatus,
+            'previewGenerated' => $previewGenerated,
+            'previewFields' => $selectedLocale === null
+                ? []
+                : $resolver->preview($provider->type(), $model, $selectedLocale->code, $editorValues),
         ]);
     }
 
@@ -166,34 +212,14 @@ class TranslationController extends Controller
     ) {
         $provider = $this->provider($registry, $type);
         $model = $this->model($provider, $key);
-        $rules = [
-            'locale' => [
-                'required', 'string',
-                Rule::exists('ronove_locales', 'code')->where('is_enabled', true),
-            ],
-            'status' => ['required', Rule::in([Translation::DRAFT, Translation::PUBLISHED])],
-            'values' => ['nullable', 'array'],
-        ];
-
-        foreach ($provider->fields() as $field => $definition) {
-            $rules['values.'.$field] = array_filter([
-                'nullable',
-                'string',
-                $definition->maxLength === null ? null : 'max:'.$definition->maxLength,
-            ]);
-        }
-
-        $validated = $request->validate($rules);
+        $validated = $request->validate($this->translationRules($provider));
 
         if ($validated['status'] === Translation::PUBLISHED) {
             Gate::authorize('ronove.publish');
         }
 
         $locale = Locale::query()->where('code', $validated['locale'])->firstOrFail();
-        $values = collect($validated['values'] ?? [])
-            ->only(array_keys($provider->fields()))
-            ->filter(fn ($value) => is_string($value) && trim($value) !== '')
-            ->all();
+        $values = $this->validatedValues($provider, $validated);
 
         [$translation, $previousStatus] = DB::transaction(function () use ($provider, $model, $locale, $validated, $values, $resolver) {
             $resource = Resource::query()->firstOrCreate([
@@ -300,6 +326,43 @@ class TranslationController extends Controller
         $this->authorizeProvider($provider);
 
         return $provider;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function translationRules(ResourceProvider $provider): array
+    {
+        $rules = [
+            'locale' => [
+                'required', 'string',
+                Rule::exists('ronove_locales', 'code')->where('is_enabled', true),
+            ],
+            'status' => ['required', Rule::in([Translation::DRAFT, Translation::PUBLISHED])],
+            'values' => ['nullable', 'array'],
+        ];
+
+        foreach ($provider->fields() as $field => $definition) {
+            $rules['values.'.$field] = array_filter([
+                'nullable',
+                'string',
+                $definition->maxLength === null ? null : 'max:'.$definition->maxLength,
+            ]);
+        }
+
+        return $rules;
+    }
+
+    /**
+     * @param  array<string, mixed>  $validated
+     * @return array<string, string>
+     */
+    private function validatedValues(ResourceProvider $provider, array $validated): array
+    {
+        return collect($validated['values'] ?? [])
+            ->only(array_keys($provider->fields()))
+            ->filter(fn ($value) => is_string($value) && trim($value) !== '')
+            ->all();
     }
 
     private function model(ResourceProvider $provider, string $key): Model
