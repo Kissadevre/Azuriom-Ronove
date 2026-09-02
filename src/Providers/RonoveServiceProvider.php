@@ -18,9 +18,12 @@ use Azuriom\Plugin\Ronove\RonoveManager;
 use Azuriom\Plugin\Ronove\Services\LanguageSwitcher;
 use Azuriom\Plugin\Ronove\Services\LocaleManager;
 use Azuriom\Plugin\Ronove\Services\LocalizedSettings;
+use Azuriom\Plugin\Ronove\Services\LocalizedThemeConfiguration;
 use Azuriom\Plugin\Ronove\Services\PublicLanguagePage;
 use Azuriom\Plugin\Ronove\Services\ResourceRegistry;
 use Azuriom\Plugin\Ronove\Services\ReviewWorkflow;
+use Azuriom\Plugin\Ronove\Services\ThemeTranslationManifestLoader;
+use Azuriom\Plugin\Ronove\Services\ThemeTranslationRegistrar;
 use Azuriom\Plugin\Ronove\Services\TranslationAudit;
 use Azuriom\Plugin\Ronove\Services\TranslationCoverage;
 use Azuriom\Plugin\Ronove\Services\TranslationResolver;
@@ -37,6 +40,9 @@ class RonoveServiceProvider extends BasePluginServiceProvider
         $this->app->singleton(ResourceRegistry::class);
         $this->app->singleton(LocaleManager::class);
         $this->app->singleton(LocalizedSettings::class);
+        $this->app->singleton(ThemeTranslationManifestLoader::class);
+        $this->app->singleton(ThemeTranslationRegistrar::class);
+        $this->app->singleton(LocalizedThemeConfiguration::class);
         $this->app->singleton(LanguageSwitcher::class);
         $this->app->singleton(TranslationResolver::class);
         $this->app->singleton(TranslationCoverage::class);
@@ -57,6 +63,7 @@ class RonoveServiceProvider extends BasePluginServiceProvider
         $this->registerAdminNavigation();
         $this->registerLocaleMiddleware();
         $this->registerResources();
+        $this->app->booted(fn () => $this->app->make(ThemeTranslationRegistrar::class)->registerActive());
         View::composer(['home', 'posts.index', 'posts.show'], PostTranslationComposer::class);
         View::composer('pages.show', PageTranslationComposer::class);
 

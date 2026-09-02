@@ -51,6 +51,61 @@ class TranslationResolver
     }
 
     /**
+     * Resolve several resource types in one query.
+     *
+     * @param  array<string, Model>  $modelsByType
+     * @return array<string, array<string, string|null>>
+     */
+    public function valuesForResources(array $modelsByType, ?string $locale = null): array
+    {
+        if ($modelsByType === []) {
+            return [];
+        }
+
+        $definitions = [];
+
+        foreach ($modelsByType as $type => $model) {
+            $provider = $this->registry->get($type);
+            $this->assertModel($provider, $model);
+            $definitions[$type] = [
+                'provider' => $provider,
+                'model' => $model,
+                'key' => $provider->key($model),
+            ];
+        }
+
+        $resources = Resource::query()
+            ->where(function ($query) use ($definitions) {
+                foreach ($definitions as $type => $definition) {
+                    $query->orWhere(function ($resourceQuery) use ($type, $definition) {
+                        $resourceQuery
+                            ->where('resource_type', $type)
+                            ->where('resource_key', $definition['key']);
+                    });
+                }
+            })
+            ->with(['translations.locale'])
+            ->get()
+            ->keyBy(fn (Resource $resource) => $resource->resource_type."\0".$resource->resource_key);
+        $chain = $this->locales->translationChain(
+            LocaleCode::normalize($locale ?? app()->getLocale()),
+        );
+        $values = [];
+
+        foreach ($definitions as $type => $definition) {
+            $resource = $resources->get($type."\0".$definition['key']);
+            $values[$type] = $this->resolveValues(
+                $definition['provider'],
+                $definition['model'],
+                $resource?->translations ?? collect(),
+                $chain,
+            );
+        }
+
+        return $values;
+    }
+
+    /**
      * Apply published translations to models that will be rendered in a view.
      *
      * @param  iterable<int, Model>  $models

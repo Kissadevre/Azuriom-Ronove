@@ -4,6 +4,12 @@ Ronove provides per-visitor locales and optional translated alternatives for vis
 
 Complete integration guidance for plugins, themes, and automated coding agents is available in [DEVELOPERS.md](DEVELOPERS.md).
 
+## Theme configuration manifests
+
+An active theme may expose visitor-visible configuration text through an optional `ronove.php` manifest in its root directory. Ronove registers each declared block in the Translation center and applies published values to `config('theme')` for the current public request without changing the stored theme configuration. Operational values such as URLs, images, colors, icons, ordering, and internal IDs remain outside translation.
+
+See the theme manifest contract and repeatable-item ID requirements in [DEVELOPERS.md](DEVELOPERS.md#translatable-theme-configuration).
+
 ## Registering plugin content
 
 An integrating plugin first registers its translation integration and then associates one or more resource providers with it:
