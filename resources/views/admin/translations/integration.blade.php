@@ -20,7 +20,7 @@
         <ul class="nav nav-tabs mb-4">
             @foreach($providers as $type => $registeredProvider)
                 <li class="nav-item">
-                    <a class="nav-link @if($type === $provider->type()) active @endif" href="{{ route('ronove.admin.translations.integration', ['integration' => $integration->id, 'type' => $type]) }}" @if($type === $provider->type()) aria-current="page" @endif>
+                    <a class="nav-link @if($type === $provider->type()) active @endif" href="{{ route('ronove.admin.translations.integration', array_filter(['integration' => $integration->id, 'type' => $type, 'locale' => $selectedLocale?->code])) }}" @if($type === $provider->type()) aria-current="page" @endif>
                         {{ $registeredProvider->label() }}
                     </a>
                 </li>
@@ -29,6 +29,63 @@
     @endif
 
     <h2 class="h4 mb-3">{{ $provider->label() }}</h2>
+
+    @if($coverage !== null && $selectedLocale !== null)
+        <div class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-2 mb-3">
+            <h3 class="h5 mb-0">{{ trans('ronove::admin.translations.coverage_for', ['locale' => $selectedLocale->native_name]) }}</h3>
+        </div>
+        <div class="row g-3 mb-4">
+            @foreach([
+                'total' => ['value' => $coverage->total(), 'color' => 'primary'],
+                'missing' => ['value' => $coverage->count('missing'), 'color' => 'secondary'],
+                'draft' => ['value' => $coverage->count('draft'), 'color' => 'warning'],
+                'published' => ['value' => $coverage->count('published'), 'color' => 'success'],
+                'outdated' => ['value' => $coverage->count('outdated'), 'color' => 'danger'],
+            ] as $coverageStatus => $metric)
+                <div class="col-6 col-md">
+                    <div class="card h-100 border-{{ $metric['color'] }}">
+                        <div class="card-body py-3">
+                            <div class="text-body-secondary small">{{ trans('ronove::admin.translations.coverage_status.'.$coverageStatus) }}</div>
+                            <div class="fs-4 fw-semibold text-{{ $metric['color'] }}">{{ $metric['value'] }}</div>
+                        </div>
+                    </div>
+                </div>
+            @endforeach
+        </div>
+    @endif
+
+    <form class="card card-body mb-4" action="{{ route('ronove.admin.translations.integration', $integration->id) }}" method="GET">
+        <input type="hidden" name="type" value="{{ $provider->type() }}">
+        <div class="row g-3 align-items-end">
+            <div class="col-md-4 col-xl-3">
+                <label class="form-label" for="coverageLocale">{{ trans('ronove::admin.translations.filters.locale') }}</label>
+                <select class="form-select" id="coverageLocale" name="locale">
+                    @foreach($locales as $locale)
+                        <option value="{{ $locale->code }}" @selected($selectedLocale?->is($locale))>{{ $locale->native_name }}</option>
+                    @endforeach
+                </select>
+            </div>
+            @if($filterable)
+                <div class="col-md-4 col-xl-3">
+                    <label class="form-label" for="translationStatus">{{ trans('ronove::admin.translations.filters.status') }}</label>
+                    <select class="form-select" id="translationStatus" name="status">
+                        <option value="">{{ trans('ronove::admin.translations.filters.all_statuses') }}</option>
+                        @foreach(\Azuriom\Plugin\Ronove\Support\TranslationCoverageReport::FILTERS as $filterStatus)
+                            <option value="{{ $filterStatus }}" @selected($statusFilter === $filterStatus)>{{ trans('ronove::admin.translations.coverage_status.'.$filterStatus) }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-md-4 col-xl-4">
+                    <label class="form-label" for="resourceSearch">{{ trans('ronove::admin.translations.filters.search') }}</label>
+                    <input class="form-control" id="resourceSearch" name="search" value="{{ $searchFilter }}" maxlength="100">
+                </div>
+            @endif
+            <div class="col-xl-2 d-flex gap-2">
+                <button class="btn btn-primary" type="submit">{{ trans('ronove::admin.translations.filters.apply') }}</button>
+                <a class="btn btn-outline-secondary" href="{{ route('ronove.admin.translations.integration', ['integration' => $integration->id, 'type' => $provider->type()]) }}">{{ trans('ronove::admin.translations.filters.clear') }}</a>
+            </div>
+        </div>
+    </form>
 
     <div class="card">
         <div class="table-responsive">
@@ -42,6 +99,7 @@
                 </thead>
                 <tbody>
                     @forelse($resources as $resourceModel)
+                        @php($resourceKey = $provider->key($resourceModel))
                         @php($storedResource = $storedResources->get($provider->key($resourceModel)))
                         <tr>
                             <td>
@@ -52,14 +110,19 @@
                                 <div class="d-flex flex-wrap gap-1">
                                     @foreach($locales as $locale)
                                         @php($storedTranslation = $storedResource?->translations?->firstWhere('locale_id', $locale->id))
-                                        <span class="badge {{ $storedTranslation?->isPublished() ? 'text-bg-success' : ($storedTranslation ? 'text-bg-warning' : 'text-bg-secondary') }}">
+                                        @php($isOutdated = $selectedLocale?->is($locale) && $coverage?->isOutdated($resourceKey))
+                                        <span class="badge {{ $isOutdated ? 'text-bg-danger' : ($storedTranslation?->isPublished() ? 'text-bg-success' : ($storedTranslation ? 'text-bg-warning' : 'text-bg-secondary')) }}" @if($isOutdated) title="{{ trans('ronove::admin.translations.outdated_badge', ['locale' => $locale->native_name]) }}" @endif>
                                             {{ $locale->code }}
+                                            @if($isOutdated)
+                                                <i class="bi bi-exclamation-triangle ms-1" aria-hidden="true"></i>
+                                                <span class="visually-hidden">{{ trans('ronove::admin.translations.outdated_badge', ['locale' => $locale->native_name]) }}</span>
+                                            @endif
                                         </span>
                                     @endforeach
                                 </div>
                             </td>
                             <td class="text-end">
-                                <a class="btn btn-sm btn-primary" href="{{ route('ronove.admin.translations.edit', ['type' => $provider->type(), 'key' => $provider->key($resourceModel)]) }}">
+                                <a class="btn btn-sm btn-primary" href="{{ route('ronove.admin.translations.edit', array_filter(['type' => $provider->type(), 'key' => $provider->key($resourceModel), 'locale' => $selectedLocale?->code])) }}">
                                     <i class="bi bi-translate" aria-hidden="true"></i>
                                     <span class="visually-hidden">{{ trans('messages.actions.edit') }}</span>
                                 </a>

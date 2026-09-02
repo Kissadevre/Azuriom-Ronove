@@ -79,6 +79,7 @@ abstract class TestCase extends BaseTestCase
         (require dirname(__DIR__, 3).'/database/migrations/2019_08_22_000000_create_settings_table.php')->up();
         (require dirname(__DIR__, 3).'/database/migrations/2020_06_30_000000_create_attachments_table.php')->up();
         (require dirname(__DIR__, 3).'/database/migrations/2020_05_01_000000_create_notifications_table.php')->up();
+        (require dirname(__DIR__, 3).'/database/migrations/2019_09_22_000000_create_action_logs_table.php')->up();
 
         $socialLinksMigration = dirname(__DIR__, 3).'/database/migrations/2022_01_29_000000_create_social_links_table.php';
 

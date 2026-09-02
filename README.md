@@ -44,13 +44,82 @@ return [
 
 Providers can also use `richText()` when their original field is trusted HTML managed by an administrative rich-text editor. The provider must declare its Eloquent model class through `model()` so Ronove can reject mismatched resources.
 
+Providers may additionally implement `FilterableResourceProvider` to enable search and coverage-status filters in the translation center:
+
+```php
+use Azuriom\Plugin\Ronove\Contracts\FilterableResourceProvider;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
+
+public function applySearch(Builder $query, string $search): Builder
+{
+    return $query->where('name', 'like', '%'.$search.'%');
+}
+
+public function applyResourceKeys(Builder $query, Collection $keys): Builder
+{
+    return $query->whereKey($keys);
+}
+```
+
+This contract is optional. Providers that only implement `ResourceProvider` remain compatible and continue to use the regular paginated listing.
+
 Render a translated value explicitly without mutating the source record:
 
 ```php
 $name = app('ronove')->translate('projects.project', $project, 'name');
 ```
 
+Resolve every registered field at once, or apply published translations to a collection that is about to be rendered:
+
+```php
+$values = app('ronove')->translatedValues('projects.project', $project);
+
+app('ronove')->overlay('projects.project', $projects, 'es_ES');
+```
+
+`overlay()` changes only the in-memory Eloquent instances supplied by the caller. It never persists translated values to the integrating plugin's tables.
+
+Coverage for an enabled language is also available to integrations:
+
+```php
+$coverage = app('ronove')->coverage('projects.project', 'es_ES');
+
+$coverage->total();
+$coverage->count('missing');
+$coverage->count('draft');
+$coverage->count('published');
+$coverage->count('outdated');
+$coverage->keysFor('outdated');
+```
+
+A translation is outdated when its saved source hash no longer matches the provider's current original visible fields. This status is informative: published translations remain publicly available until a human reviews and saves them again. `outdated` can overlap `draft` or `published`; it is not a third persistence status.
+
 Published values resolve per field in this order: selected locale, Azuriom global locale, original value. Drafts are never shown publicly.
+
+## Integration events
+
+Plugins may listen to the following public events:
+
+- `TranslationSaved`: dispatched after every successful translation save with `resourceType`, `resourceKey`, `locale`, `status`, `values`, and `previousStatus`.
+- `TranslationPublished`: dispatched only when a translation enters the `published` status. Re-saving an already published translation does not emit it again.
+- `TranslationDeleted`: dispatched after an existing translation is deleted with its previous status.
+- `LocaleChanged`: dispatched after a visitor's preference is persisted, with the selected locale and the authenticated user ID when available.
+
+The event payloads contain stable scalar values and arrays instead of mutable Eloquent models. A listener can therefore decide whether an event belongs to its registered resource type without depending on Ronove's internal storage models:
+
+```php
+use Azuriom\Plugin\Ronove\Events\TranslationPublished;
+use Illuminate\Support\Facades\Event;
+
+Event::listen(TranslationPublished::class, function (TranslationPublished $event) {
+    if ($event->resourceType !== 'projects.project') {
+        return;
+    }
+
+    // React to the newly published human translation.
+});
+```
 
 ## Language selector integration
 
@@ -116,12 +185,14 @@ An integrating plugin should include the following manifest dependency so it can
 ```json
 {
     "dependencies": {
-        "ronove": ">=0.5.0"
+        "ronove": ">=0.7.0"
     }
 }
 ```
 
 Ronove stores only translated alternatives and source hashes. Deleting or disabling a locale does not modify the original resource.
+
+Ronove intentionally has no automatic or machine-translation workflow. Translation text is authored and reviewed by administrators so wording, voice, and context remain under human control.
 
 ## Built-in Azuriom content
 

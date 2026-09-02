@@ -5,7 +5,7 @@
 @section('content')
     <div class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3 mb-4">
         <div>
-            <a class="text-decoration-none" href="{{ route('ronove.admin.translations.integration', ['integration' => $integration->id, 'type' => $provider->type()]) }}">
+            <a class="text-decoration-none" href="{{ route('ronove.admin.translations.integration', array_filter(['integration' => $integration->id, 'type' => $provider->type(), 'locale' => $selectedLocale?->code])) }}">
                 <i class="bi bi-arrow-left" aria-hidden="true"></i> {{ trans('ronove::admin.translations.back') }}
             </a>
             <h1 class="mt-2 mb-1">{{ $provider->title($resourceModel) }}</h1>
