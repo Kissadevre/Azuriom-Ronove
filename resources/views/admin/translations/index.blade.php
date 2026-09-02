@@ -6,15 +6,10 @@
 
 @section('content')
     <div class="ronove-admin-shell">
-    @php($headerActions = [['label' => trans('ronove::admin.glossary.title'), 'url' => route('ronove.admin.glossary.index'), 'icon' => 'bi-journal-text']])
-    @can('ronove.audit')
-        @php($headerActions[] = ['label' => trans('ronove::admin.audit.short_title'), 'url' => route('ronove.admin.audit.index'), 'icon' => 'bi-shield-check'])
-    @endcan
     @include('ronove::admin._header', [
         'title' => trans('ronove::admin.translations.title'),
         'description' => trans('ronove::admin.translations.description'),
         'icon' => 'bi-translate',
-        'actions' => $headerActions,
     ])
 
     <div class="row g-4">

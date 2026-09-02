@@ -185,6 +185,10 @@ class RonoveServiceProvider extends BasePluginServiceProvider
                         'name' => trans('ronove::admin.nav.translations'),
                         'permission' => 'ronove.translations',
                     ],
+                    'ronove.admin.glossary.index' => [
+                        'name' => trans('ronove::admin.nav.glossary'),
+                        'permission' => 'ronove.translations',
+                    ],
                     'ronove.admin.audit.index' => [
                         'name' => trans('ronove::admin.nav.audit'),
                         'permission' => 'ronove.audit',

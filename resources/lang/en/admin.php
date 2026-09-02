@@ -7,6 +7,7 @@ return [
         'settings' => 'Settings',
         'languages' => 'Languages',
         'translations' => 'Translation center',
+        'glossary' => 'Glossary',
         'audit' => 'Audit and cleanup',
     ],
     'integrations' => [
