@@ -74,9 +74,10 @@ class LocaleManager
     public function resolve(Request $request): string
     {
         $enabled = $this->enabled();
+        $global = $this->globalLocale();
 
         if ($enabled->isEmpty()) {
-            return $this->globalLocale();
+            return $global;
         }
 
         $enabledByCode = $enabled->keyBy('code');
@@ -100,6 +101,10 @@ class LocaleManager
 
             $normalized = LocaleCode::normalize($candidate);
 
+            if ($normalized === $global) {
+                return $global;
+            }
+
             if ($enabledByCode->has($normalized)) {
                 return $normalized;
             }
@@ -120,8 +125,6 @@ class LocaleManager
                 return $languageMatch->code;
             }
         }
-
-        $global = $this->globalLocale();
 
         return $global;
     }

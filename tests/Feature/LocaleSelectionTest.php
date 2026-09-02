@@ -150,7 +150,7 @@ class LocaleSelectionTest extends TestCase
         $options = app('ronove')->languageOptions();
         $current = app('ronove')->currentLanguage();
 
-        $this->assertCount(1, $options);
+        $this->assertCount(2, $options);
         $this->assertContainsOnlyInstancesOf(LocaleOption::class, $options);
         $this->assertSame('es_ES', $current?->code);
         $this->assertTrue($current?->isCurrent);
@@ -181,7 +181,7 @@ class LocaleSelectionTest extends TestCase
         $this->assertStringNotContainsString('<span class="ms-1">Español</span>', $html);
     }
 
-    public function test_azuriom_global_locale_cannot_be_selected_as_a_ronove_language(): void
+    public function test_azuriom_global_locale_is_available_as_the_original_language(): void
     {
         Setting::updateSettings('locale', 'en');
         Locale::query()->create([
@@ -194,8 +194,55 @@ class LocaleSelectionTest extends TestCase
 
         $this->from('/ronove')->post('/ronove/locale', ['locale' => 'en'])
             ->assertRedirect('/ronove')
-            ->assertSessionHasErrors('locale');
+            ->assertSessionHas(LocaleManager::SESSION_KEY, 'en')
+            ->assertSessionHasNoErrors();
 
-        $this->assertSame([], app('ronove')->languageOptions()->all());
+        $options = app('ronove')->languageOptions('en');
+        $this->assertCount(1, $options);
+        $this->assertSame('en', $options->first()->code);
+        $this->assertSame('Original (English)', $options->first()->nativeName);
+        $this->assertTrue($options->first()->isCurrent);
+    }
+
+    public function test_selecting_a_ronove_language_never_changes_azuriom_global_locale(): void
+    {
+        Event::fake([LocaleChanged::class]);
+        Setting::updateSettings('locale', 'en');
+        $spanish = Locale::query()->create([
+            'code' => 'es_ES',
+            'name' => 'Spanish',
+            'native_name' => 'Español',
+            'is_enabled' => true,
+            'position' => 1,
+        ]);
+        $user = User::query()->create([
+            'name' => 'Language User',
+            'email' => fake()->unique()->safeEmail(),
+            'password' => 'password',
+            'role_id' => 1,
+        ]);
+
+        $this->actingAs($user)
+            ->from('/ronove')
+            ->post('/ronove/locale', ['locale' => 'es_ES'])
+            ->assertSessionHas(LocaleManager::SESSION_KEY, 'es_ES')
+            ->assertSessionHasNoErrors();
+
+        $this->assertSame('en', setting('locale'));
+        $this->assertDatabaseHas('ronove_user_preferences', [
+            'user_id' => $user->id,
+            'locale_id' => $spanish->id,
+        ]);
+
+        $this->actingAs($user)
+            ->from('/ronove')
+            ->post('/ronove/locale', ['locale' => 'en'])
+            ->assertSessionHas(LocaleManager::SESSION_KEY, 'en')
+            ->assertSessionHasNoErrors();
+
+        $this->assertSame('en', setting('locale'));
+        $this->assertDatabaseMissing('ronove_user_preferences', ['user_id' => $user->id]);
+        Event::assertDispatched(LocaleChanged::class, fn (LocaleChanged $event) => $event->locale === 'es_ES');
+        Event::assertDispatched(LocaleChanged::class, fn (LocaleChanged $event) => $event->locale === 'en');
     }
 }

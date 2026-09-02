@@ -21,32 +21,35 @@ class LanguageController extends Controller
         ]);
     }
 
-    public function update(Request $request)
+    public function update(Request $request, LanguageSwitcher $switcher)
     {
+        $available = $switcher->options()->pluck('code')->all();
         $validated = $request->validate([
-            'locale' => [
-                'required',
-                'string',
-                Rule::exists('ronove_locales', 'code')->where(fn ($query) => $query
-                    ->where('is_enabled', true)
-                    ->where('code', '!=', Locale::globalCode())),
-            ],
+            'locale' => ['required', 'string', Rule::in($available)],
         ]);
+        $code = $validated['locale'];
+        $isOriginal = $code === Locale::globalCode();
 
-        $locale = Locale::query()->where('code', $validated['locale'])->firstOrFail();
+        $locale = $isOriginal
+            ? null
+            : Locale::query()->where('code', $code)->where('is_enabled', true)->translationTargets()->firstOrFail();
 
-        $request->session()->put(LocaleManager::SESSION_KEY, $locale->code);
-        Cookie::queue(cookie(LocaleManager::COOKIE_NAME, $locale->code, 60 * 24 * 365));
+        $request->session()->put(LocaleManager::SESSION_KEY, $code);
+        Cookie::queue(cookie(LocaleManager::COOKIE_NAME, $code, 60 * 24 * 365));
 
         if ($request->user() !== null) {
-            UserPreference::query()->updateOrCreate(
-                ['user_id' => $request->user()->getAuthIdentifier()],
-                ['locale_id' => $locale->id],
-            );
+            if ($isOriginal) {
+                UserPreference::query()->where('user_id', $request->user()->getAuthIdentifier())->delete();
+            } else {
+                UserPreference::query()->updateOrCreate(
+                    ['user_id' => $request->user()->getAuthIdentifier()],
+                    ['locale_id' => $locale->id],
+                );
+            }
         }
 
         LocaleChanged::dispatch(
-            $locale->code,
+            $code,
             $request->user() === null ? null : (int) $request->user()->getAuthIdentifier(),
         );
 
