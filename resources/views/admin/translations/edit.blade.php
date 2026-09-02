@@ -9,7 +9,8 @@
     <a class="ronove-admin-back" href="{{ route('ronove.admin.translations.integration', array_filter(['integration' => $integration->id, 'type' => $provider->type(), 'locale' => $selectedLocale?->code])) }}"><i class="bi bi-arrow-left" aria-hidden="true"></i>{{ trans('ronove::admin.translations.back') }}</a>
     @include('ronove::admin._header', ['title' => $provider->title($resourceModel), 'description' => $provider->type().':'.$provider->key($resourceModel), 'icon' => 'bi-pencil-square'])
 
-    <ul class="nav nav-tabs mb-4" role="tablist">
+    <div class="ronove-content-tabs mb-4">
+    <ul class="nav nav-pills flex-nowrap" role="tablist">
         <li class="nav-item" role="presentation">
             <a class="nav-link @if($showOriginal) active @endif" href="{{ route('ronove.admin.translations.edit', ['type' => $provider->type(), 'key' => $provider->key($resourceModel), 'locale' => 'original']) }}">
                 {{ trans('ronove::admin.translations.original') }}
@@ -39,6 +40,7 @@
             </li>
         @endforeach
     </ul>
+    </div>
 
     @if($showOriginal)
         <div class="alert alert-info">{{ trans('ronove::admin.translations.original_help') }}</div>
@@ -64,7 +66,7 @@
                 'approved' => 'success',
                 default => 'warning',
             })
-            <div class="alert alert-{{ $reviewColor }}">
+            <div class="alert alert-{{ $reviewColor }} ronove-review-status">
                 <div class="d-flex flex-wrap align-items-center gap-2">
                     <strong>{{ trans('ronove::admin.reviews.current_status') }}:</strong>
                     <span class="badge text-bg-{{ $reviewColor }}">{{ trans('ronove::admin.reviews.status.'.$translation->review_status) }}</span>
@@ -85,17 +87,20 @@
             </div>
         @endif
 
-        <div class="card ronove-admin-card mb-4">
-            <div class="card-header d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-2">
+        <details class="card ronove-admin-card ronove-editor-disclosure mb-4" @if($glossaryTerms->isNotEmpty()) open @endif>
+            <summary class="card-header">
                 <div>
                     <h2 class="h5 mb-1">{{ trans('ronove::admin.glossary.suggestions') }}</h2>
                     <p class="text-body-secondary small mb-0">{{ trans('ronove::admin.glossary.suggestions_help') }}</p>
                 </div>
-                <a class="btn btn-sm btn-outline-primary align-self-start" href="{{ route('ronove.admin.glossary.index', ['scope' => $integration->id, 'locale' => $selectedLocale->code]) }}">
-                    <i class="bi bi-journal-text me-1" aria-hidden="true"></i> {{ trans('ronove::admin.glossary.manage') }}
-                </a>
-            </div>
+                <span class="ronove-disclosure-meta"><span class="badge rounded-pill text-bg-secondary">{{ $glossaryTerms->count() }}</span><i class="bi bi-chevron-down" aria-hidden="true"></i></span>
+            </summary>
             <div class="card-body">
+                <div class="d-flex justify-content-end mb-3">
+                    <a class="btn btn-sm btn-outline-primary" href="{{ route('ronove.admin.glossary.index', ['scope' => $integration->id, 'locale' => $selectedLocale->code]) }}">
+                        <i class="bi bi-journal-text me-1" aria-hidden="true"></i> {{ trans('ronove::admin.glossary.manage') }}
+                    </a>
+                </div>
                 @forelse($glossaryTerms as $term)
                     <div class="@if(! $loop->last) border-bottom pb-3 mb-3 @endif">
                         <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
@@ -116,7 +121,7 @@
                     <span class="text-body-secondary">{{ trans('ronove::admin.glossary.no_suggestions') }}</span>
                 @endforelse
             </div>
-        </div>
+        </details>
 
         <form action="{{ route('ronove.admin.translations.update', ['type' => $provider->type(), 'key' => $provider->key($resourceModel)]) }}" method="POST">
             @csrf
@@ -146,6 +151,15 @@
             @endif
 
             <div class="card ronove-admin-card mb-4">
+                <div class="card-header ronove-editor-card-header">
+                    <div>
+                        <span class="ronove-admin-eyebrow">{{ $selectedLocale->native_name }}</span>
+                        <h2 class="h5 mb-0">{{ $provider->label() }}</h2>
+                    </div>
+                    @if($translation)
+                        <span class="badge rounded-pill text-bg-{{ $translation->isPublished() ? 'success' : 'warning' }}">{{ trans('ronove::admin.translations.status.'.$translation->status) }}</span>
+                    @endif
+                </div>
                 <div class="card-body">
                     @foreach($provider->fields() as $field => $definition)
                         @php($fieldValue = old('values.'.$field, $editorValues[$field] ?? ''))
@@ -167,11 +181,14 @@
                 </div>
             </div>
 
-            <div class="card ronove-admin-card mb-4">
-                <div class="card-header">
-                    <h2 class="h5 mb-1">{{ trans('ronove::admin.translations.preview_title') }}</h2>
-                    <p class="text-body-secondary small mb-0">{{ trans('ronove::admin.translations.preview_description') }}</p>
-                </div>
+            <details class="card ronove-admin-card ronove-editor-disclosure mb-4" @if($previewGenerated) open @endif>
+                <summary class="card-header">
+                    <div>
+                        <h2 class="h5 mb-1">{{ trans('ronove::admin.translations.preview_title') }}</h2>
+                        <p class="text-body-secondary small mb-0">{{ trans('ronove::admin.translations.preview_description') }}</p>
+                    </div>
+                    <span class="ronove-disclosure-meta"><i class="bi bi-chevron-down" aria-hidden="true"></i></span>
+                </summary>
                 <div class="card-body">
                     @foreach($provider->fields() as $field => $definition)
                         @php($fieldPreview = $previewFields[$field])
@@ -204,9 +221,10 @@
                         </section>
                     @endforeach
                 </div>
-            </div>
+            </details>
 
-            <div class="d-flex flex-wrap gap-2 align-items-center">
+            <div class="ronove-editor-actions">
+                <div class="ronove-editor-actions-primary">
                 @if($reviewWorkflowEnabled)
                     <button class="btn btn-primary" type="submit" name="workflow_action" value="save">
                         <i class="bi bi-save me-1" aria-hidden="true"></i> {{ trans('ronove::admin.reviews.save_draft') }}
@@ -228,9 +246,10 @@
                 <button class="btn btn-outline-primary" type="submit" formaction="{{ route('ronove.admin.translations.preview', ['type' => $provider->type(), 'key' => $provider->key($resourceModel)]) }}">
                     <i class="bi bi-eye me-1" aria-hidden="true"></i> {{ trans('ronove::admin.translations.preview_action') }}
                 </button>
+                </div>
 
                 @if($translation)
-                    <button class="btn btn-danger" type="submit" form="deleteTranslationForm">
+                    <button class="btn btn-outline-danger ms-lg-auto" type="submit" form="deleteTranslationForm">
                         <i class="bi bi-trash me-1" aria-hidden="true"></i> {{ trans('messages.actions.delete') }}
                     </button>
                 @endif
@@ -278,11 +297,14 @@
         @endif
 
         @if($translation && $revisions->isNotEmpty())
-            <div class="card ronove-admin-card mt-4">
-                <div class="card-header">
-                    <h2 class="h5 mb-1">{{ trans('ronove::admin.revisions.title') }}</h2>
-                    <p class="text-body-secondary small mb-0">{{ trans('ronove::admin.revisions.description') }}</p>
-                </div>
+            <details class="card ronove-admin-card ronove-editor-disclosure mt-4">
+                <summary class="card-header">
+                    <div>
+                        <h2 class="h5 mb-1">{{ trans('ronove::admin.revisions.title') }}</h2>
+                        <p class="text-body-secondary small mb-0">{{ trans('ronove::admin.revisions.description') }}</p>
+                    </div>
+                    <span class="ronove-disclosure-meta"><span class="badge rounded-pill text-bg-secondary">{{ $revisions->total() }}</span><i class="bi bi-chevron-down" aria-hidden="true"></i></span>
+                </summary>
                 <div class="list-group list-group-flush">
                     @foreach($revisions as $revision)
                         <div class="list-group-item py-3">
@@ -331,14 +353,20 @@
                 @if($revisions->hasPages())
                     <div class="card-footer">{{ $revisions->links() }}</div>
                 @endif
-            </div>
+            </details>
         @endif
 
-        <div class="card ronove-admin-card mt-4">
-            <div class="card-header">
-                <h2 class="h5 mb-1">{{ trans('ronove::admin.translations.note_title') }}</h2>
-                <p class="text-body-secondary small mb-0">{{ trans('ronove::admin.translations.note_description') }}</p>
-            </div>
+        <details class="card ronove-admin-card ronove-editor-disclosure mt-4" @if($translationNote || $errors->has('note')) open @endif>
+            <summary class="card-header">
+                <div>
+                    <h2 class="h5 mb-1">{{ trans('ronove::admin.translations.note_title') }}</h2>
+                    <p class="text-body-secondary small mb-0">{{ trans('ronove::admin.translations.note_description') }}</p>
+                </div>
+                <span class="ronove-disclosure-meta">
+                    @if($translationNote)<i class="bi bi-check-circle text-success" aria-hidden="true"></i>@endif
+                    <i class="bi bi-chevron-down" aria-hidden="true"></i>
+                </span>
+            </summary>
             <div class="card-body">
                 <form action="{{ route('ronove.admin.translations.notes.update', ['type' => $provider->type(), 'key' => $provider->key($resourceModel), 'locale' => $selectedLocale]) }}" method="POST">
                     @csrf
@@ -360,7 +388,7 @@
                     </div>
                 </form>
             </div>
-        </div>
+        </details>
 
         @if($translationNote)
             <form id="deleteTranslationNoteForm" action="{{ route('ronove.admin.translations.notes.destroy', ['type' => $provider->type(), 'key' => $provider->key($resourceModel), 'locale' => $selectedLocale]) }}" method="POST" class="d-none">
