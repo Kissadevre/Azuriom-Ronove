@@ -6,11 +6,16 @@ use Azuriom\Extensions\Plugin\BasePluginServiceProvider;
 use Azuriom\Http\Kernel;
 use Azuriom\Models\ActionLog;
 use Azuriom\Models\Permission;
+use Azuriom\Models\Post;
 use Azuriom\Plugin\Ronove\Middleware\SetLocale;
+use Azuriom\Plugin\Ronove\Providers\Resources\PostResourceProvider;
 use Azuriom\Plugin\Ronove\RonoveManager;
 use Azuriom\Plugin\Ronove\Services\LocaleManager;
 use Azuriom\Plugin\Ronove\Services\ResourceRegistry;
+use Azuriom\Plugin\Ronove\Services\TranslationResolver;
+use Azuriom\Plugin\Ronove\View\Composers\PostTranslationComposer;
 use Illuminate\Session\Middleware\StartSession;
+use Illuminate\Support\Facades\View;
 
 class RonoveServiceProvider extends BasePluginServiceProvider
 {
@@ -18,6 +23,7 @@ class RonoveServiceProvider extends BasePluginServiceProvider
     {
         $this->app->singleton(ResourceRegistry::class);
         $this->app->singleton(LocaleManager::class);
+        $this->app->singleton(TranslationResolver::class);
         $this->app->singleton(RonoveManager::class);
         $this->app->alias(RonoveManager::class, 'ronove');
     }
@@ -30,6 +36,8 @@ class RonoveServiceProvider extends BasePluginServiceProvider
         $this->registerRouteDescriptions();
         $this->registerAdminNavigation();
         $this->registerLocaleMiddleware();
+        $this->registerResources();
+        View::composer(['home', 'posts.index', 'posts.show'], PostTranslationComposer::class);
 
         Permission::registerPermissions([
             'ronove.settings' => 'ronove::admin.permissions.settings',
@@ -42,6 +50,18 @@ class RonoveServiceProvider extends BasePluginServiceProvider
             'color' => 'warning',
             'message' => 'ronove::admin.logs.settings_updated',
         ]);
+        ActionLog::registerLogs([
+            'ronove.translations.saved' => [
+                'icon' => 'translate',
+                'color' => 'success',
+                'message' => 'ronove::admin.logs.translation_saved',
+            ],
+            'ronove.translations.deleted' => [
+                'icon' => 'trash',
+                'color' => 'danger',
+                'message' => 'ronove::admin.logs.translation_deleted',
+            ],
+        ]);
     }
 
     private function registerLocaleMiddleware(): void
@@ -49,6 +69,15 @@ class RonoveServiceProvider extends BasePluginServiceProvider
         $kernel = $this->app->make(Kernel::class);
         $kernel->appendMiddlewareToGroup('web', SetLocale::class);
         $kernel->addToMiddlewarePriorityAfter(StartSession::class, SetLocale::class);
+    }
+
+    private function registerResources(): void
+    {
+        $this->app->make(ResourceRegistry::class)->register(new PostResourceProvider);
+
+        Post::deleted(function (Post $post) {
+            $this->app->make(RonoveManager::class)->forget('core.post', $post);
+        });
     }
 
     protected function routeDescriptions(): array

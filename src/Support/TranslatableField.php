@@ -12,7 +12,9 @@ final class TranslatableField
 
     public const MARKDOWN = 'markdown';
 
-    private const TYPES = [self::TEXT, self::TEXTAREA, self::MARKDOWN];
+    public const RICH_TEXT = 'rich_text';
+
+    private const TYPES = [self::TEXT, self::TEXTAREA, self::MARKDOWN, self::RICH_TEXT];
 
     public function __construct(
         public readonly string $type,
@@ -41,5 +43,10 @@ final class TranslatableField
     public static function markdown(string $label): self
     {
         return new self(self::MARKDOWN, $label);
+    }
+
+    public static function richText(string $label): self
+    {
+        return new self(self::RICH_TEXT, $label);
     }
 }

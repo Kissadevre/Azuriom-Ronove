@@ -10,6 +10,11 @@ interface ResourceProvider
 {
     public function type(): string;
 
+    /**
+     * @return class-string<Model>
+     */
+    public function model(): string;
+
     public function label(): string;
 
     public function permission(): ?string;

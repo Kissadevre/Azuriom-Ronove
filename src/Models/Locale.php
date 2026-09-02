@@ -20,6 +20,11 @@ class Locale extends Model
         'position' => 'integer',
     ];
 
+    public function getRouteKeyName(): string
+    {
+        return 'code';
+    }
+
     public function translations()
     {
         return $this->hasMany(Translation::class);

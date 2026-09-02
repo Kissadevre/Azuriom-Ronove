@@ -55,7 +55,11 @@ class LocaleManager
         }
 
         foreach ([$request->session()->get(self::SESSION_KEY), $request->cookie(self::COOKIE_NAME)] as $candidate) {
-            $normalized = LocaleCode::normalize(is_string($candidate) ? $candidate : null);
+            if (! is_string($candidate) || $candidate === '') {
+                continue;
+            }
+
+            $normalized = LocaleCode::normalize($candidate);
 
             if ($enabledByCode->has($normalized)) {
                 return $normalized;

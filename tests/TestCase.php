@@ -66,6 +66,22 @@ abstract class TestCase extends BaseTestCase
         (require dirname(__DIR__, 3).'/database/migrations/2019_08_15_000000_create_roles_table.php')->up();
         (require dirname(__DIR__, 3).'/database/migrations/2019_10_06_000000_create_bans_table.php')->up();
         (require dirname(__DIR__, 3).'/database/migrations/2023_06_03_add_password_changed_at_to_users_table.php')->up();
+        (require dirname(__DIR__, 3).'/database/migrations/2019_08_12_000000_create_posts_table.php')->up();
+        (require dirname(__DIR__, 3).'/database/migrations/2019_08_14_000000_create_comments_table.php')->up();
+        (require dirname(__DIR__, 3).'/database/migrations/2019_08_14_100000_create_likes_table.php')->up();
+        (require dirname(__DIR__, 3).'/database/migrations/2019_09_14_000000_create_navbar_elements_table.php')->up();
+        (require dirname(__DIR__, 3).'/database/migrations/2019_12_03_000000_create_servers_table.php')->up();
+        (require dirname(__DIR__, 3).'/database/migrations/2021_08_28_000000_create_navbar_element_role.php')->up();
+        (require dirname(__DIR__, 3).'/database/migrations/2022_02_26_000000_add_display_columns_to_servers_table.php')->up();
+        (require dirname(__DIR__, 3).'/database/migrations/2020_06_30_000000_create_attachments_table.php')->up();
+
+        $socialLinksMigration = dirname(__DIR__, 3).'/database/migrations/2022_01_29_000000_create_social_links_table.php';
+
+        if (! class_exists('CreateSocialLinksTable', false)) {
+            require_once $socialLinksMigration;
+        }
+
+        (new \CreateSocialLinksTable)->up();
 
         DB::table('roles')->insert([
             'id' => 1,

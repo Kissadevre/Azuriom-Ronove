@@ -78,4 +78,27 @@ class LocaleSelectionTest extends TestCase
         ]);
         $this->assertSame(1, UserPreference::query()->count());
     }
+
+    public function test_browser_language_is_used_when_no_session_or_cookie_exists(): void
+    {
+        Locale::query()->create([
+            'code' => 'en',
+            'name' => 'English',
+            'native_name' => 'English',
+            'is_enabled' => true,
+            'position' => 0,
+        ]);
+        Locale::query()->create([
+            'code' => 'es_ES',
+            'name' => 'Español',
+            'native_name' => 'Español',
+            'is_enabled' => true,
+            'position' => 1,
+        ]);
+
+        $this->get('/ronove', ['Accept-Language' => 'es-ES,es;q=0.9'])
+            ->assertOk();
+
+        $this->assertSame('es_ES', app()->getLocale());
+    }
 }

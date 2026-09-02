@@ -4,6 +4,7 @@ namespace Azuriom\Plugin\Ronove\Services;
 
 use Azuriom\Plugin\Ronove\Contracts\ResourceProvider;
 use Azuriom\Plugin\Ronove\Support\TranslatableField;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use InvalidArgumentException;
 
@@ -24,6 +25,10 @@ class ResourceRegistry
 
         if (isset($this->providers[$type])) {
             throw new InvalidArgumentException("The Ronove resource type [{$type}] is already registered.");
+        }
+
+        if (! is_a($provider->model(), Model::class, true)) {
+            throw new InvalidArgumentException("The Ronove resource type [{$type}] must reference an Eloquent model.");
         }
 
         $fields = $provider->fields();

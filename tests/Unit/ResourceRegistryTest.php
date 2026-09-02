@@ -37,13 +37,16 @@ class ResourceRegistryTest extends TestCase
     {
         return new class($type) implements ResourceProvider
         {
-            public function __construct(private readonly string $resourceType)
-            {
-            }
+            public function __construct(private readonly string $resourceType) {}
 
             public function type(): string
             {
                 return $this->resourceType;
+            }
+
+            public function model(): string
+            {
+                return Model::class;
             }
 
             public function label(): string
