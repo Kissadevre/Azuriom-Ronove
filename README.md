@@ -4,12 +4,30 @@ Ronove provides per-visitor locales and optional translated alternatives for vis
 
 ## Registering plugin content
 
-An integrating plugin registers a provider from its service provider after declaring Ronove as a dependency:
+An integrating plugin first registers its translation integration and then associates one or more resource providers with it:
 
 ```php
 use Azuriom\Plugin\Ronove\Facades\Ronove;
 
-Ronove::registerResourceType(new ProjectResourceProvider());
+Ronove::registerIntegration(
+    id: 'projects',
+    name: 'projects::admin.title',
+    icon: 'bi bi-kanban',
+    permission: 'projects.admin',
+);
+
+Ronove::registerResourceType(new ProjectResourceProvider(), 'projects');
+Ronove::registerResourceType(new ChangelogResourceProvider(), 'projects');
+```
+
+Integration IDs are permanent public identifiers. Register the integration before its providers. The name can be a translation key or a literal label. Its optional permission protects the complete integration in addition to each provider's own permission.
+
+Ronove displays integrations as cards in its translation center and displays multiple providers from one integration as tabs. Providers registered without an integration remain compatible and appear under the built-in `other` group.
+
+An external plugin may optionally add a shortcut in its own admin menu. That shortcut should use a plugin-owned named route which redirects to `ronove.admin.translations.integration` with the integration ID; translation controllers and storage must remain owned by Ronove:
+
+```php
+return to_route('ronove.admin.translations.integration', 'projects');
 ```
 
 The provider implements `Azuriom\Plugin\Ronove\Contracts\ResourceProvider` and defines a stable type, fields, listing query, lookup, and original values. Types and field names are public identifiers and should not be renamed after release.
@@ -98,7 +116,7 @@ An integrating plugin should include the following manifest dependency so it can
 ```json
 {
     "dependencies": {
-        "ronove": ">=0.3.0"
+        "ronove": ">=0.5.0"
     }
 }
 ```

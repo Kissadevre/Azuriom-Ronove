@@ -6,6 +6,7 @@ use Azuriom\Models\User;
 use Azuriom\Plugin\Ronove\Models\Locale;
 use Azuriom\Plugin\Ronove\Models\Resource;
 use Azuriom\Plugin\Ronove\Models\Translation;
+use Azuriom\Plugin\Ronove\Providers\Resources\PostResourceProvider;
 use Azuriom\Plugin\Ronove\Services\LocaleManager;
 use Azuriom\Plugin\Ronove\Services\ResourceRegistry;
 use Azuriom\Plugin\Ronove\Services\TranslationResolver;
@@ -20,6 +21,50 @@ class PostTranslationTest extends TestCase
         $this->assertSame(['title', 'content'], array_keys($fields));
         $this->assertArrayNotHasKey('description', $fields);
         $this->assertArrayNotHasKey('slug', $fields);
+        $this->assertSame('core', app(ResourceRegistry::class)->integrationFor('core.post')->id);
+    }
+
+    public function test_the_translation_center_groups_core_resources_under_azuriom(): void
+    {
+        app(ResourceRegistry::class)->register(new class extends PostResourceProvider
+        {
+            public function type(): string
+            {
+                return 'core.featured-post';
+            }
+
+            public function label(): string
+            {
+                return 'Featured posts';
+            }
+        }, 'core');
+
+        $admin = User::query()->create([
+            'name' => 'Ronove Admin',
+            'email' => 'ronove-admin@example.com',
+            'password' => 'password',
+            'role_id' => 1,
+        ]);
+        $admin->role->forceFill(['is_admin' => true])->save();
+
+        $this->actingAs($admin)
+            ->get('/admin/ronove/translations')
+            ->assertOk()
+            ->assertSee('Azuriom')
+            ->assertSee('News posts')
+            ->assertSee('Featured posts')
+            ->assertSee(route('ronove.admin.translations.integration', 'core'));
+
+        $this->actingAs($admin)
+            ->get('/admin/ronove/translations/integration/core')
+            ->assertOk()
+            ->assertSee('Azuriom')
+            ->assertSee('News posts')
+            ->assertSee('Featured posts')
+            ->assertSee(route('ronove.admin.translations.integration', [
+                'integration' => 'core',
+                'type' => 'core.featured-post',
+            ]));
     }
 
     public function test_published_post_fields_use_selected_global_and_original_fallbacks(): void

@@ -8,6 +8,7 @@ use Azuriom\Plugin\Ronove\Services\LanguageSwitcher;
 use Azuriom\Plugin\Ronove\Services\ResourceRegistry;
 use Azuriom\Plugin\Ronove\Services\TranslationResolver;
 use Azuriom\Plugin\Ronove\Support\LocaleOption;
+use Azuriom\Plugin\Ronove\Support\TranslationIntegration;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 
@@ -19,9 +20,25 @@ class RonoveManager
         private readonly LanguageSwitcher $languageSwitcher,
     ) {}
 
-    public function registerResourceType(ResourceProvider $provider): void
+    public function registerIntegration(
+        string $id,
+        string $name,
+        string $icon = 'bi bi-puzzle',
+        ?string $permission = null,
+        int $order = 100,
+    ): void {
+        $this->registry->registerIntegration(new TranslationIntegration(
+            $id,
+            $name,
+            $icon,
+            $permission,
+            $order,
+        ));
+    }
+
+    public function registerResourceType(ResourceProvider $provider, ?string $integration = null): void
     {
-        $this->registry->register($provider);
+        $this->registry->register($provider, $integration);
     }
 
     public function resources(): ResourceRegistry

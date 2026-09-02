@@ -4,7 +4,11 @@ return [
     'title' => 'Ronove',
     'nav' => [
         'languages' => 'Idiomas',
-        'translations' => 'Traducciones',
+        'translations' => 'Centro de traducciones',
+    ],
+    'integrations' => [
+        'core' => 'Azuriom',
+        'other' => 'Otras integraciones',
     ],
     'resources' => [
         'posts' => 'Publicaciones de noticias',
@@ -26,8 +30,13 @@ return [
         'translation_deleted' => 'Eliminó una traducción de Ronove.',
     ],
     'translations' => [
-        'title' => 'Traducciones',
+        'title' => 'Centro de traducciones',
         'description' => 'Administra alternativas visibles sin cambiar el contenido original, slugs, rutas ni metadatos SEO.',
+        'content_types' => '{1} :count tipo de contenido|[2,*] :count tipos de contenido',
+        'manage_integration' => 'Administrar :integration',
+        'no_integrations' => 'No hay integraciones de traducción disponibles para tus permisos.',
+        'back_to_center' => 'Regresar al centro de traducciones',
+        'integration_description' => 'Elige un tipo de contenido y administra sus traducciones.',
         'resource_type' => 'Tipo de contenido',
         'resource' => 'Recurso original',
         'coverage' => 'Cobertura de idiomas',

@@ -3,68 +3,44 @@
 @section('title', trans('ronove::admin.translations.title'))
 
 @section('content')
-    <div class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3 mb-4">
-        <div>
-            <h1 class="mb-1">{{ trans('ronove::admin.translations.title') }}</h1>
-            <p class="text-body-secondary mb-0">{{ trans('ronove::admin.translations.description') }}</p>
-        </div>
-
-        @if($providers->count() > 1)
-            <form action="{{ route('ronove.admin.translations.index') }}" method="GET">
-                <label class="visually-hidden" for="resourceTypeSelect">{{ trans('ronove::admin.translations.resource_type') }}</label>
-                <select class="form-select" id="resourceTypeSelect" name="type" onchange="this.form.submit()">
-                    @foreach($providers as $type => $registeredProvider)
-                        <option value="{{ $type }}" @selected($type === $provider->type())>{{ $registeredProvider->label() }}</option>
-                    @endforeach
-                </select>
-            </form>
-        @endif
+    <div class="mb-4">
+        <h1 class="mb-1">{{ trans('ronove::admin.translations.title') }}</h1>
+        <p class="text-body-secondary mb-0">{{ trans('ronove::admin.translations.description') }}</p>
     </div>
 
-    <div class="card">
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead>
-                    <tr>
-                        <th>{{ trans('ronove::admin.translations.resource') }}</th>
-                        <th>{{ trans('ronove::admin.translations.coverage') }}</th>
-                        <th class="text-end">{{ trans('messages.actions.edit') }}</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse($resources as $resourceModel)
-                        @php($storedResource = $storedResources->get($provider->key($resourceModel)))
-                        <tr>
-                            <td>
-                                <strong>{{ $provider->title($resourceModel) }}</strong>
-                                <small class="d-block text-body-secondary">{{ $provider->type() }}:{{ $provider->key($resourceModel) }}</small>
-                            </td>
-                            <td>
-                                <div class="d-flex flex-wrap gap-1">
-                                    @foreach($locales as $locale)
-                                        @php($storedTranslation = $storedResource?->translations?->firstWhere('locale_id', $locale->id))
-                                        <span class="badge {{ $storedTranslation?->isPublished() ? 'text-bg-success' : ($storedTranslation ? 'text-bg-warning' : 'text-bg-secondary') }}">
-                                            {{ $locale->code }}
-                                        </span>
-                                    @endforeach
-                                </div>
-                            </td>
-                            <td class="text-end">
-                                <a class="btn btn-sm btn-primary" href="{{ route('ronove.admin.translations.edit', ['type' => $provider->type(), 'key' => $provider->key($resourceModel)]) }}">
-                                    <i class="bi bi-translate" aria-hidden="true"></i>
-                                    <span class="visually-hidden">{{ trans('messages.actions.edit') }}</span>
-                                </a>
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="3" class="text-center text-body-secondary py-5">{{ trans('ronove::admin.translations.empty') }}</td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-    </div>
+    <div class="row g-4">
+        @forelse($integrationGroups as $group)
+            @php($integration = $group['integration'])
+            <div class="col-md-6 col-xl-4">
+                <div class="card h-100">
+                    <div class="card-body d-flex flex-column">
+                        <div class="d-flex align-items-center gap-3 mb-3">
+                            <span class="fs-2 text-primary" aria-hidden="true"><i class="{{ $integration->icon }}"></i></span>
+                            <div>
+                                <h2 class="h5 mb-1">{{ $integration->label() }}</h2>
+                                <span class="text-body-secondary">
+                                    {{ trans_choice('ronove::admin.translations.content_types', $group['providers']->count(), ['count' => $group['providers']->count()]) }}
+                                </span>
+                            </div>
+                        </div>
 
-    <div class="mt-3">{{ $resources->links() }}</div>
+                        <ul class="list-unstyled text-body-secondary mb-4">
+                            @foreach($group['providers'] as $provider)
+                                <li><i class="bi bi-check2 me-1" aria-hidden="true"></i>{{ $provider->label() }}</li>
+                            @endforeach
+                        </ul>
+
+                        <a class="btn btn-primary mt-auto" href="{{ route('ronove.admin.translations.integration', $integration->id) }}">
+                            <i class="bi bi-translate me-1" aria-hidden="true"></i>
+                            {{ trans('ronove::admin.translations.manage_integration', ['integration' => $integration->label()]) }}
+                        </a>
+                    </div>
+                </div>
+            </div>
+        @empty
+            <div class="col-12">
+                <div class="alert alert-info mb-0">{{ trans('ronove::admin.translations.no_integrations') }}</div>
+            </div>
+        @endforelse
+    </div>
 @endsection

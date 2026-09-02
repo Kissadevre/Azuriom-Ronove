@@ -5,6 +5,7 @@ namespace Azuriom\Plugin\Ronove\Tests\Unit;
 use Azuriom\Plugin\Ronove\Contracts\ResourceProvider;
 use Azuriom\Plugin\Ronove\Services\ResourceRegistry;
 use Azuriom\Plugin\Ronove\Support\TranslatableField;
+use Azuriom\Plugin\Ronove\Support\TranslationIntegration;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use InvalidArgumentException;
@@ -31,6 +32,37 @@ class ResourceRegistryTest extends TestCase
         $this->expectException(InvalidArgumentException::class);
 
         $registry->register($this->provider('example.article'));
+    }
+
+    public function test_it_groups_providers_by_registered_integration(): void
+    {
+        $registry = new ResourceRegistry;
+        $integration = new TranslationIntegration('example', 'Example', 'bi bi-box', 'example.admin', 10);
+        $provider = $this->provider('example.article');
+
+        $registry->registerIntegration($integration);
+        $registry->register($provider, 'example');
+
+        $this->assertSame($integration, $registry->integration('example'));
+        $this->assertSame($integration, $registry->integrationFor('example.article'));
+        $this->assertSame($provider, $registry->forIntegration('example')->get('example.article'));
+    }
+
+    public function test_providers_without_an_explicit_integration_remain_compatible(): void
+    {
+        $registry = new ResourceRegistry;
+        $registry->register($this->provider('legacy.article'));
+
+        $this->assertSame(ResourceRegistry::DEFAULT_INTEGRATION, $registry->integrationFor('legacy.article')->id);
+    }
+
+    public function test_it_rejects_providers_for_unknown_integrations(): void
+    {
+        $registry = new ResourceRegistry;
+
+        $this->expectException(InvalidArgumentException::class);
+
+        $registry->register($this->provider('example.article'), 'missing');
     }
 
     private function provider(string $type): ResourceProvider

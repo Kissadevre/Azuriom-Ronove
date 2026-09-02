@@ -75,7 +75,14 @@ class RonoveServiceProvider extends BasePluginServiceProvider
 
     private function registerResources(): void
     {
-        $this->app->make(ResourceRegistry::class)->register(new PostResourceProvider);
+        $ronove = $this->app->make(RonoveManager::class);
+        $ronove->registerIntegration(
+            'core',
+            'ronove::admin.integrations.core',
+            'bi bi-box-seam',
+            order: 0,
+        );
+        $ronove->registerResourceType(new PostResourceProvider, 'core');
 
         Post::deleted(function (Post $post) {
             $this->app->make(RonoveManager::class)->forget('core.post', $post);

@@ -10,21 +10,48 @@ use Azuriom\Plugin\Ronove\Models\Resource;
 use Azuriom\Plugin\Ronove\Models\Translation;
 use Azuriom\Plugin\Ronove\Services\ResourceRegistry;
 use Azuriom\Plugin\Ronove\Services\TranslationResolver;
+use Azuriom\Plugin\Ronove\Support\TranslationIntegration;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 
 class TranslationController extends Controller
 {
-    public function index(Request $request, ResourceRegistry $registry)
+    public function index(ResourceRegistry $registry)
     {
         abort_if($registry->all()->isEmpty(), 404);
 
-        $type = $request->string('type')->toString() ?: $registry->all()->keys()->first();
-        $provider = $this->provider($registry, $type);
-        $this->authorizeProvider($provider);
+        $integrationGroups = $registry->integrations()
+            ->filter(fn (TranslationIntegration $integration) => $this->canAccessIntegration($integration))
+            ->map(function (TranslationIntegration $integration) use ($registry) {
+                return [
+                    'integration' => $integration,
+                    'providers' => $this->accessibleProviders($registry, $integration->id),
+                ];
+            })
+            ->filter(fn (array $group) => $group['providers']->isNotEmpty());
+
+        return view('ronove::admin.translations.index', [
+            'integrationGroups' => $integrationGroups,
+        ]);
+    }
+
+    public function integration(Request $request, ResourceRegistry $registry, string $integration)
+    {
+        abort_unless($registry->hasIntegration($integration), 404);
+
+        $integrationDefinition = $registry->integration($integration);
+        $this->authorizeIntegration($integrationDefinition);
+        $providers = $this->accessibleProviders($registry, $integration);
+        abort_if($providers->isEmpty(), 403);
+
+        $type = $request->string('type')->toString() ?: $providers->keys()->first();
+        abort_unless($providers->has($type), 404);
+
+        $provider = $providers->get($type);
         $resources = $provider->query()->paginate(20)->withQueryString();
         $storedResources = Resource::query()
             ->where('resource_type', $provider->type())
@@ -35,8 +62,9 @@ class TranslationController extends Controller
             ->get()
             ->keyBy('resource_key');
 
-        return view('ronove::admin.translations.index', [
-            'providers' => $registry->all(),
+        return view('ronove::admin.translations.integration', [
+            'integration' => $integrationDefinition,
+            'providers' => $providers,
             'provider' => $provider,
             'resources' => $resources,
             'storedResources' => $storedResources,
@@ -52,7 +80,6 @@ class TranslationController extends Controller
         TranslationResolver $resolver,
     ) {
         $provider = $this->provider($registry, $type);
-        $this->authorizeProvider($provider);
         $model = $this->model($provider, $key);
         $locales = Locale::query()->where('is_enabled', true)->orderBy('position')->get();
         $selectedCode = $request->string('locale')->toString();
@@ -72,6 +99,7 @@ class TranslationController extends Controller
             : $resource?->translations->firstWhere('locale_id', $selectedLocale->id);
 
         return view('ronove::admin.translations.edit', [
+            'integration' => $registry->integrationFor($provider->type()),
             'provider' => $provider,
             'resourceModel' => $model,
             'resourceRecord' => $resource,
@@ -92,7 +120,6 @@ class TranslationController extends Controller
         TranslationResolver $resolver,
     ) {
         $provider = $this->provider($registry, $type);
-        $this->authorizeProvider($provider);
         $model = $this->model($provider, $key);
         $rules = [
             'locale' => [
@@ -161,7 +188,6 @@ class TranslationController extends Controller
         Locale $locale,
     ) {
         $provider = $this->provider($registry, $type);
-        $this->authorizeProvider($provider);
         $model = $this->model($provider, $key);
         $resource = Resource::query()
             ->where('resource_type', $provider->type())
@@ -190,7 +216,11 @@ class TranslationController extends Controller
     {
         abort_unless($registry->has($type), 404);
 
-        return $registry->get($type);
+        $provider = $registry->get($type);
+        $this->authorizeIntegration($registry->integrationFor($type));
+        $this->authorizeProvider($provider);
+
+        return $provider;
     }
 
     private function model(ResourceProvider $provider, string $key): Model
@@ -203,5 +233,27 @@ class TranslationController extends Controller
         if ($provider->permission() !== null) {
             Gate::authorize($provider->permission());
         }
+    }
+
+    private function authorizeIntegration(TranslationIntegration $integration): void
+    {
+        if ($integration->permission !== null) {
+            Gate::authorize($integration->permission);
+        }
+    }
+
+    private function canAccessIntegration(TranslationIntegration $integration): bool
+    {
+        return $integration->permission === null || Gate::allows($integration->permission);
+    }
+
+    /**
+     * @return Collection<string, ResourceProvider>
+     */
+    private function accessibleProviders(ResourceRegistry $registry, string $integration): Collection
+    {
+        return $registry->forIntegration($integration)
+            ->filter(fn (ResourceProvider $provider) => $provider->permission() === null
+                || Gate::allows($provider->permission()));
     }
 }
