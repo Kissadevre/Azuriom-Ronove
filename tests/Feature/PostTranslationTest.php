@@ -165,6 +165,7 @@ class PostTranslationTest extends TestCase
                 'name="values[title]"',
             ], false)
             ->assertDontSee('Preview and comparison')
+            ->assertDontSee('Update preview')
             ->assertDontSee('locale=original');
 
         $this->actingAs($admin)

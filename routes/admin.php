@@ -15,11 +15,11 @@ Route::get('/settings', [SettingsController::class, 'index'])
 Route::post('/settings', [SettingsController::class, 'update'])
     ->name('settings.update')->middleware('can:ronove.settings');
 Route::get('/languages', [LanguageController::class, 'index'])
-    ->name('languages.index')->middleware('can:ronove.settings');
+    ->name('languages.index')->middleware('can:ronove.languages');
 Route::post('/languages', [LanguageController::class, 'update'])
-    ->name('languages.update')->middleware('can:ronove.settings');
+    ->name('languages.update')->middleware('can:ronove.languages');
 Route::post('/languages/fallbacks', [LanguageController::class, 'updateFallbacks'])
-    ->name('languages.fallbacks.update')->middleware('can:ronove.settings');
+    ->name('languages.fallbacks.update')->middleware('can:ronove.languages');
 Route::prefix('/translations')->name('translations.')->middleware('can:ronove.translations')->group(function () {
     Route::get('/', [TranslationController::class, 'index'])->name('index');
     Route::get('/integration/{integration}', [TranslationController::class, 'integration'])
@@ -43,7 +43,7 @@ Route::prefix('/translations')->name('translations.')->middleware('can:ronove.tr
     Route::delete('/resource/{type}/{key}/{locale}', [TranslationController::class, 'destroy'])->name('destroy')
         ->where('type', '[a-z0-9._-]+');
 });
-Route::prefix('/glossary')->name('glossary.')->middleware('can:ronove.translations')->group(function () {
+Route::prefix('/glossary')->name('glossary.')->middleware('can:ronove.glossary')->group(function () {
     Route::get('/', [GlossaryController::class, 'index'])->name('index');
     Route::get('/create', [GlossaryController::class, 'create'])->name('create');
     Route::post('/', [GlossaryController::class, 'store'])->name('store');

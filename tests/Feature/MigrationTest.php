@@ -2,14 +2,16 @@
 
 namespace Azuriom\Plugin\Ronove\Tests\Feature;
 
+use Azuriom\Models\Role;
 use Azuriom\Plugin\Ronove\Tests\TestCase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 class MigrationTest extends TestCase
 {
-    public function test_public_release_schema_is_created_by_one_consolidated_migration(): void
+    public function test_public_release_schema_and_follow_up_migrations_are_available(): void
     {
-        $this->assertCount(1, glob($this->migrationDirectory().'/*.php') ?: []);
+        $this->assertCount(2, glob($this->migrationDirectory().'/*.php') ?: []);
 
         $this->assertTrue(Schema::hasColumns('ronove_locales', [
             'code', 'name', 'native_name', 'flag_code', 'is_enabled', 'position', 'fallback_locale_id',
@@ -35,6 +37,52 @@ class MigrationTest extends TestCase
             'translation_id', 'user_id', 'action', 'status', 'review_status',
             'values', 'source_hash', 'feedback',
         ]));
+    }
+
+    public function test_split_permissions_are_copied_for_existing_roles_and_are_reversible(): void
+    {
+        $role = Role::query()->create([
+            'name' => 'Legacy Ronove manager',
+            'color' => '6c757d',
+            'power' => 1,
+            'is_admin' => false,
+        ]);
+        $role->permissions()->createMany([
+            ['permission' => 'ronove.settings'],
+            ['permission' => 'ronove.translations'],
+        ]);
+        $migration = require $this->migrationDirectory().'/2026_09_02_000000_copy_split_admin_permissions.php';
+
+        $migration->up();
+        $migration->up();
+
+        $this->assertSame(1, DB::table('permissions')->where([
+            'role_id' => $role->id,
+            'permission' => 'ronove.languages',
+        ])->count());
+        $this->assertSame(1, DB::table('permissions')->where([
+            'role_id' => $role->id,
+            'permission' => 'ronove.glossary',
+        ])->count());
+
+        $migration->down();
+
+        $this->assertDatabaseHas('permissions', [
+            'role_id' => $role->id,
+            'permission' => 'ronove.settings',
+        ]);
+        $this->assertDatabaseHas('permissions', [
+            'role_id' => $role->id,
+            'permission' => 'ronove.translations',
+        ]);
+        $this->assertDatabaseMissing('permissions', [
+            'role_id' => $role->id,
+            'permission' => 'ronove.languages',
+        ]);
+        $this->assertDatabaseMissing('permissions', [
+            'role_id' => $role->id,
+            'permission' => 'ronove.glossary',
+        ]);
     }
 
     public function test_the_consolidated_migration_is_reversible(): void
