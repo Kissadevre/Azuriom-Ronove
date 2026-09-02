@@ -128,7 +128,8 @@ class RegionalFallbackAndPreviewTest extends TestCase
                 ],
             ])
             ->assertOk()
-            ->assertSee('Preview and comparison')
+            ->assertSee('Mexican Spanish translation')
+            ->assertDontSee('Preview and comparison')
             ->assertSee('Nothing was saved or published')
             ->assertSee('Original preview title')
             ->assertSee('Unsaved preview title')

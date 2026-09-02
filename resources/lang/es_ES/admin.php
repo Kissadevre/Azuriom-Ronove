@@ -179,6 +179,7 @@ return [
         'preview_action' => 'Actualizar vista previa',
         'preview_generated' => 'La vista previa se actualizó con los valores del formulario. No se guardó ni publicó nada.',
         'preview_original' => 'Texto original',
+        'translation_target' => 'Traducción en :locale',
         'preview_result' => 'Resultado público',
         'preview_empty' => 'Valor vacío',
         'preview_source_selected' => 'Seleccionado: :locale',

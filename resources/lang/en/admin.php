@@ -179,6 +179,7 @@ return [
         'preview_action' => 'Update preview',
         'preview_generated' => 'The preview was updated with the form values. Nothing was saved or published.',
         'preview_original' => 'Original text',
+        'translation_target' => ':locale translation',
         'preview_result' => 'Public result',
         'preview_empty' => 'Empty value',
         'preview_source_selected' => 'Selected: :locale',
