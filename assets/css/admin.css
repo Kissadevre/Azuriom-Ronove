@@ -116,7 +116,7 @@
 .ronove-review-status hr { margin-block: .65rem; }
 .ronove-editor-card-header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
 .ronove-translation-field > .row > [class*="col-"] { display: flex; min-width: 0; flex-direction: column; }
-.ronove-translation-field > .row > [class*="col-"] > .border { flex: 1 1 auto; }
+.ronove-translation-field > .row > [class*="col-"] > .border { height: auto !important; flex: 1 1 auto; }
 .ronove-inline-preview { padding: .75rem; border: 1px solid var(--bs-border-color-translucent, var(--bs-border-color)); border-radius: .7rem; background: rgba(var(--bs-primary-rgb), .025); }
 .ronove-editor-disclosure > summary { display: flex; align-items: center; justify-content: space-between; gap: 1rem; cursor: pointer; list-style: none; }
 .ronove-editor-disclosure > summary::-webkit-details-marker { display: none; }
