@@ -320,7 +320,7 @@ class TranslationController extends Controller
                     'publish' => Translation::REVIEW_APPROVED,
                     default => Translation::REVIEW_DRAFT,
                 }
-                : ($status === Translation::PUBLISHED ? Translation::REVIEW_APPROVED : Translation::REVIEW_DRAFT);
+            : ($status === Translation::PUBLISHED ? Translation::REVIEW_APPROVED : Translation::REVIEW_DRAFT);
             $sourceHash = $resolver->sourceHash($provider, $model);
             $publishedValues = $reviewWorkflowEnabled
                 ? ($publishFromReview ? $values : $existing?->publicValues())

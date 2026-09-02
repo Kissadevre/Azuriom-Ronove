@@ -2,8 +2,8 @@
 
 namespace Azuriom\Plugin\Ronove\Tests\Feature;
 
-use Azuriom\Models\User;
 use Azuriom\Models\Setting;
+use Azuriom\Models\User;
 use Azuriom\Plugin\Ronove\Models\Locale;
 use Azuriom\Plugin\Ronove\Models\Resource;
 use Azuriom\Plugin\Ronove\Models\Translation;

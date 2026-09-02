@@ -7,8 +7,10 @@ use Illuminate\Support\Facades\Schema;
 
 class MigrationTest extends TestCase
 {
-    public function test_plugin_tables_are_created_by_separate_migrations(): void
+    public function test_public_release_schema_is_created_by_one_consolidated_migration(): void
     {
+        $this->assertCount(1, glob($this->migrationDirectory().'/*.php') ?: []);
+
         $this->assertTrue(Schema::hasColumns('ronove_locales', [
             'code', 'name', 'native_name', 'flag_code', 'is_enabled', 'position', 'fallback_locale_id',
         ]));
@@ -33,5 +35,36 @@ class MigrationTest extends TestCase
             'translation_id', 'user_id', 'action', 'status', 'review_status',
             'values', 'source_hash', 'feedback',
         ]));
+    }
+
+    public function test_the_consolidated_migration_is_reversible(): void
+    {
+        $migration = require $this->migrationDirectory().'/2026_09_01_000000_create_ronove_locales_table.php';
+        $tables = [
+            'ronove_translation_revisions',
+            'ronove_translation_notes',
+            'ronove_glossary_terms',
+            'ronove_translations',
+            'ronove_resources',
+            'ronove_user_preferences',
+            'ronove_locales',
+        ];
+
+        $migration->down();
+
+        foreach ($tables as $table) {
+            $this->assertFalse(Schema::hasTable($table));
+        }
+
+        $migration->up();
+
+        foreach ($tables as $table) {
+            $this->assertTrue(Schema::hasTable($table));
+        }
+    }
+
+    private function migrationDirectory(): string
+    {
+        return dirname(__DIR__, 2).'/database/migrations';
     }
 }
