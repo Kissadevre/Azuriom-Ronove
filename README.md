@@ -44,13 +44,104 @@ return [
 
 Providers can also use `richText()` when their original field is trusted HTML managed by an administrative rich-text editor. The provider must declare its Eloquent model class through `model()` so Ronove can reject mismatched resources.
 
+Providers may additionally implement `FilterableResourceProvider` to enable search and coverage-status filters in the translation center:
+
+```php
+use Azuriom\Plugin\Ronove\Contracts\FilterableResourceProvider;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
+
+public function applySearch(Builder $query, string $search): Builder
+{
+    return $query->where('name', 'like', '%'.$search.'%');
+}
+
+public function applyResourceKeys(Builder $query, Collection $keys): Builder
+{
+    return $query->whereKey($keys);
+}
+```
+
+This contract is optional. Providers that only implement `ResourceProvider` remain compatible and continue to use the regular paginated listing.
+
 Render a translated value explicitly without mutating the source record:
 
 ```php
 $name = app('ronove')->translate('projects.project', $project, 'name');
 ```
 
-Published values resolve per field in this order: selected locale, Azuriom global locale, original value. Drafts are never shown publicly.
+Resolve every registered field at once, or apply published translations to a collection that is about to be rendered:
+
+```php
+$values = app('ronove')->translatedValues('projects.project', $project);
+
+app('ronove')->overlay('projects.project', $projects, 'es_ES');
+```
+
+`overlay()` changes only the in-memory Eloquent instances supplied by the caller. It never persists translated values to the integrating plugin's tables.
+
+Coverage for an enabled language is also available to integrations:
+
+```php
+$coverage = app('ronove')->coverage('projects.project', 'es_ES');
+
+$coverage->total();
+$coverage->count('missing');
+$coverage->count('draft');
+$coverage->count('published');
+$coverage->count('outdated');
+$coverage->keysFor('outdated');
+```
+
+A translation is outdated when its saved source hash no longer matches the provider's current original visible fields. This status is informative: published translations remain publicly available until a human reviews and saves them again. `outdated` can overlap `draft` or `published`; it is not a third persistence status.
+
+Published values resolve independently per field in this order: selected locale, its configured regional fallback chain, Azuriom global locale, original value. Drafts are never shown publicly, including drafts stored in fallback languages.
+
+## Regional fallbacks
+
+Administrators configure regional fallback chains from Ronove's Languages page. Each enabled locale can point to another enabled locale, for example `es_MX` to `es_ES`. Chains may contain multiple levels, but Ronove rejects self-references and cycles.
+
+The global Azuriom locale is always tried after the configured regional chain. A defensive cycle guard is also applied while resolving content in case locale records were modified outside Ronove. The same chain is installed in Laravel's translator for Azuriom and compatible plugin language files, so interface strings and translated content follow consistent rules.
+
+Disabling a locale clears fallbacks owned by it and references pointing to it. Existing source content and translations are never changed.
+
+## Preview and comparison
+
+Every translation editor includes a field-by-field comparison between the original text and the value visitors would receive if the current form were published. Each resolved value identifies its source as the selected locale, a regional fallback, Azuriom's global locale, or the original text.
+
+The **Update preview** action accepts the current unsaved form values, renders rich text and Markdown with their corresponding presentation, and applies the public fallback chain without writing to the database, changing publication status, adding action logs, or dispatching translation events.
+
+## Glossary and internal notes
+
+The translation center links to a human-maintained glossary. Terms are stored for one target locale and can be global or scoped to a registered integration. An integration-specific term is therefore available to all of that integration's resource providers without leaking into unrelated plugins.
+
+When an original resource contains a glossary term, its preferred translation and optional usage context appear in the translation editor. Matching is case-insensitive, but glossary entries are advisory: Ronove never inserts or replaces text automatically.
+
+Each resource and target locale can also have one internal note. Notes are stored independently from translations, remain private to administrators, and do not create drafts, affect coverage, participate in fallbacks, or appear on public pages. Deleting the source resource removes its notes through the same Ronove resource lifecycle.
+
+## Integration events
+
+Plugins may listen to the following public events:
+
+- `TranslationSaved`: dispatched after every successful translation save with `resourceType`, `resourceKey`, `locale`, `status`, `values`, and `previousStatus`.
+- `TranslationPublished`: dispatched only when a translation enters the `published` status. Re-saving an already published translation does not emit it again.
+- `TranslationDeleted`: dispatched after an existing translation is deleted with its previous status.
+- `LocaleChanged`: dispatched after a visitor's preference is persisted, with the selected locale and the authenticated user ID when available.
+
+The event payloads contain stable scalar values and arrays instead of mutable Eloquent models. A listener can therefore decide whether an event belongs to its registered resource type without depending on Ronove's internal storage models:
+
+```php
+use Azuriom\Plugin\Ronove\Events\TranslationPublished;
+use Illuminate\Support\Facades\Event;
+
+Event::listen(TranslationPublished::class, function (TranslationPublished $event) {
+    if ($event->resourceType !== 'projects.project') {
+        return;
+    }
+
+    // React to the newly published human translation.
+});
+```
 
 ## Language selector integration
 
@@ -116,12 +207,14 @@ An integrating plugin should include the following manifest dependency so it can
 ```json
 {
     "dependencies": {
-        "ronove": ">=0.5.0"
+        "ronove": ">=0.9.0"
     }
 }
 ```
 
 Ronove stores only translated alternatives and source hashes. Deleting or disabling a locale does not modify the original resource.
+
+Ronove intentionally has no automatic or machine-translation workflow. Translation text is authored and reviewed by administrators so wording, voice, and context remain under human control.
 
 ## Built-in Azuriom content
 

@@ -32,6 +32,44 @@ class LocaleManager
             ->get();
     }
 
+    /**
+     * Return the selected locale, its configured fallbacks, and Azuriom's global locale.
+     *
+     * @return array<int, string>
+     */
+    public function translationChain(string $locale): array
+    {
+        $selected = LocaleCode::normalize($locale);
+        $global = $this->globalLocale();
+        $chain = [$selected];
+        $enabled = $this->enabled();
+        $byId = $enabled->keyBy('id');
+        $current = $enabled->firstWhere('code', $selected);
+        $visited = $current === null ? [] : [$current->id => true];
+
+        while ($current?->fallback_locale_id !== null) {
+            $fallback = $byId->get($current->fallback_locale_id);
+
+            if (! $fallback instanceof Locale || isset($visited[$fallback->id])) {
+                break;
+            }
+
+            if ($selected !== $global && $fallback->code === $global) {
+                break;
+            }
+
+            $visited[$fallback->id] = true;
+            $chain[] = $fallback->code;
+            $current = $fallback;
+        }
+
+        if (! in_array($global, $chain, true)) {
+            $chain[] = $global;
+        }
+
+        return $chain;
+    }
+
     public function resolve(Request $request): string
     {
         $enabled = $this->enabled();
@@ -91,9 +129,16 @@ class LocaleManager
     {
         $locale = $this->resolve($request);
         $fallback = $this->globalLocale();
+        $chain = $this->translationChain($locale);
+        $translator = app('translator');
 
         app()->setLocale($locale);
-        app('translator')->setFallback($fallback);
+        $translator->setFallback($fallback);
+        $translator->determineLocalesUsing(
+            fn (array $locales) => LocaleCode::normalize((string) ($locales[0] ?? $locale)) === $locale
+                ? $chain
+                : array_values(array_unique($locales))
+        );
         Carbon::setLocale($locale);
         $request->attributes->set(self::SESSION_KEY, $locale);
 

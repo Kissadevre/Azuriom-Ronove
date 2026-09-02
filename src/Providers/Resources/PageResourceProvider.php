@@ -3,12 +3,14 @@
 namespace Azuriom\Plugin\Ronove\Providers\Resources;
 
 use Azuriom\Models\Page;
+use Azuriom\Plugin\Ronove\Contracts\FilterableResourceProvider;
 use Azuriom\Plugin\Ronove\Contracts\ResourceProvider;
 use Azuriom\Plugin\Ronove\Support\TranslatableField;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Collection;
 
-class PageResourceProvider implements ResourceProvider
+class PageResourceProvider implements FilterableResourceProvider, ResourceProvider
 {
     public function type(): string
     {
@@ -63,5 +65,15 @@ class PageResourceProvider implements ResourceProvider
         $value = $resource->getRawOriginal($field);
 
         return $value === null ? null : (string) $value;
+    }
+
+    public function applySearch(Builder $query, string $search): Builder
+    {
+        return $query->where('title', 'like', '%'.$search.'%');
+    }
+
+    public function applyResourceKeys(Builder $query, Collection $keys): Builder
+    {
+        return $query->whereKey($keys);
     }
 }

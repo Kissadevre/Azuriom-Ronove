@@ -19,6 +19,7 @@ use Azuriom\Plugin\Ronove\Services\LanguageSwitcher;
 use Azuriom\Plugin\Ronove\Services\LocaleManager;
 use Azuriom\Plugin\Ronove\Services\LocalizedSettings;
 use Azuriom\Plugin\Ronove\Services\ResourceRegistry;
+use Azuriom\Plugin\Ronove\Services\TranslationCoverage;
 use Azuriom\Plugin\Ronove\Services\TranslationResolver;
 use Azuriom\Plugin\Ronove\View\Composers\PageTranslationComposer;
 use Azuriom\Plugin\Ronove\View\Composers\PostTranslationComposer;
@@ -34,6 +35,7 @@ class RonoveServiceProvider extends BasePluginServiceProvider
         $this->app->singleton(LocalizedSettings::class);
         $this->app->singleton(LanguageSwitcher::class);
         $this->app->singleton(TranslationResolver::class);
+        $this->app->singleton(TranslationCoverage::class);
         $this->app->singleton(RonoveManager::class);
         $this->app->alias(RonoveManager::class, 'ronove');
     }
@@ -71,6 +73,26 @@ class RonoveServiceProvider extends BasePluginServiceProvider
                 'icon' => 'trash',
                 'color' => 'danger',
                 'message' => 'ronove::admin.logs.translation_deleted',
+            ],
+            'ronove.glossary.saved' => [
+                'icon' => 'journal-text',
+                'color' => 'success',
+                'message' => 'ronove::admin.logs.glossary_saved',
+            ],
+            'ronove.glossary.deleted' => [
+                'icon' => 'trash',
+                'color' => 'danger',
+                'message' => 'ronove::admin.logs.glossary_deleted',
+            ],
+            'ronove.notes.saved' => [
+                'icon' => 'sticky',
+                'color' => 'success',
+                'message' => 'ronove::admin.logs.note_saved',
+            ],
+            'ronove.notes.deleted' => [
+                'icon' => 'trash',
+                'color' => 'danger',
+                'message' => 'ronove::admin.logs.note_deleted',
             ],
         ]);
     }

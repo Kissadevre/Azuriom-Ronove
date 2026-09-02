@@ -3,6 +3,7 @@
 namespace Azuriom\Plugin\Ronove\Controllers;
 
 use Azuriom\Http\Controllers\Controller;
+use Azuriom\Plugin\Ronove\Events\LocaleChanged;
 use Azuriom\Plugin\Ronove\Models\Locale;
 use Azuriom\Plugin\Ronove\Models\UserPreference;
 use Azuriom\Plugin\Ronove\Services\LanguageSwitcher;
@@ -41,6 +42,11 @@ class LanguageController extends Controller
                 ['locale_id' => $locale->id],
             );
         }
+
+        LocaleChanged::dispatch(
+            $locale->code,
+            $request->user() === null ? null : (int) $request->user()->getAuthIdentifier(),
+        );
 
         return back()->with('success', trans('ronove::messages.updated'));
     }

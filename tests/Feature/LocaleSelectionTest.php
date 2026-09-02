@@ -3,16 +3,20 @@
 namespace Azuriom\Plugin\Ronove\Tests\Feature;
 
 use Azuriom\Models\User;
+use Azuriom\Plugin\Ronove\Events\LocaleChanged;
 use Azuriom\Plugin\Ronove\Models\Locale;
 use Azuriom\Plugin\Ronove\Models\UserPreference;
 use Azuriom\Plugin\Ronove\Services\LocaleManager;
 use Azuriom\Plugin\Ronove\Support\LocaleOption;
 use Azuriom\Plugin\Ronove\Tests\TestCase;
+use Illuminate\Support\Facades\Event;
 
 class LocaleSelectionTest extends TestCase
 {
     public function test_a_guest_can_select_an_enabled_locale(): void
     {
+        Event::fake([LocaleChanged::class]);
+
         Locale::query()->create([
             'code' => 'en',
             'name' => 'English',
@@ -35,6 +39,7 @@ class LocaleSelectionTest extends TestCase
         $response->assertRedirect('/ronove');
         $response->assertSessionHas(LocaleManager::SESSION_KEY, 'es_ES');
         $response->assertCookie(LocaleManager::COOKIE_NAME, 'es_ES');
+        Event::assertDispatched(LocaleChanged::class, fn (LocaleChanged $event) => $event->locale === 'es_ES' && $event->userId === null);
     }
 
     public function test_a_disabled_locale_cannot_be_selected(): void

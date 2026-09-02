@@ -3,11 +3,13 @@
 namespace Azuriom\Plugin\Ronove\Providers\Resources;
 
 use Azuriom\Models\Setting;
+use Azuriom\Plugin\Ronove\Contracts\FilterableResourceProvider;
 use Azuriom\Plugin\Ronove\Contracts\ResourceProvider;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Collection;
 
-abstract class SettingResourceProvider implements ResourceProvider
+abstract class SettingResourceProvider implements FilterableResourceProvider, ResourceProvider
 {
     public function model(): string
     {
@@ -48,6 +50,26 @@ abstract class SettingResourceProvider implements ResourceProvider
         $value = $resource->getAttribute('value');
 
         return $value === null ? null : (string) $value;
+    }
+
+    public function applySearch(Builder $query, string $search): Builder
+    {
+        $matchingNames = collect($this->settings())
+            ->filter(fn (string $label) => str_contains(mb_strtolower(trans($label)), mb_strtolower($search)))
+            ->keys();
+
+        return $query->where(function (Builder $query) use ($matchingNames, $search) {
+            $query->where('value', 'like', '%'.$search.'%');
+
+            if ($matchingNames->isNotEmpty()) {
+                $query->orWhereIn('name', $matchingNames);
+            }
+        });
+    }
+
+    public function applyResourceKeys(Builder $query, Collection $keys): Builder
+    {
+        return $query->whereIn('name', $keys);
     }
 
     /**
