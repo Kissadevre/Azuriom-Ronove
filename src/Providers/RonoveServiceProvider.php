@@ -18,6 +18,7 @@ use Azuriom\Plugin\Ronove\RonoveManager;
 use Azuriom\Plugin\Ronove\Services\LanguageSwitcher;
 use Azuriom\Plugin\Ronove\Services\LocaleManager;
 use Azuriom\Plugin\Ronove\Services\LocalizedSettings;
+use Azuriom\Plugin\Ronove\Services\PublicLanguagePage;
 use Azuriom\Plugin\Ronove\Services\ResourceRegistry;
 use Azuriom\Plugin\Ronove\Services\ReviewWorkflow;
 use Azuriom\Plugin\Ronove\Services\TranslationAudit;
@@ -41,6 +42,7 @@ class RonoveServiceProvider extends BasePluginServiceProvider
         $this->app->singleton(TranslationCoverage::class);
         $this->app->singleton(TranslationAudit::class);
         $this->app->singleton(ReviewWorkflow::class);
+        $this->app->singleton(PublicLanguagePage::class);
         $this->app->singleton(TranslationRevisionRecorder::class);
         $this->app->singleton(RonoveManager::class);
         $this->app->alias(RonoveManager::class, 'ronove');
@@ -158,9 +160,7 @@ class RonoveServiceProvider extends BasePluginServiceProvider
 
     protected function routeDescriptions(): array
     {
-        return [
-            'ronove.index' => trans('ronove::messages.language'),
-        ];
+        return [];
     }
 
     protected function adminNavigation(): array

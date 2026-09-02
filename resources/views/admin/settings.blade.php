@@ -12,8 +12,10 @@
             const mode = document.getElementById('ronoveWorkflowMode');
             const direct = document.getElementById('ronoveDirectMode');
             const review = document.getElementById('ronoveReviewMode');
+            const publicPageToggle = document.getElementById('publicLanguagePageEnabled');
+            const publicPageStatus = document.getElementById('ronovePublicPageStatus');
 
-            if (! toggle) return;
+            if (! toggle || ! publicPageToggle) return;
 
             const refresh = () => {
                 status.textContent = toggle.checked ? @json(trans('ronove::admin.settings.enabled')) : @json(trans('ronove::admin.settings.disabled'));
@@ -21,9 +23,12 @@
                 mode.textContent = toggle.checked ? @json(trans('ronove::admin.settings.review_mode')) : @json(trans('ronove::admin.settings.direct_mode'));
                 direct.classList.toggle('is-active', ! toggle.checked);
                 review.classList.toggle('is-active', toggle.checked);
+                publicPageStatus.textContent = publicPageToggle.checked ? @json(trans('ronove::admin.settings.enabled')) : @json(trans('ronove::admin.settings.disabled'));
+                publicPageStatus.className = `badge rounded-pill text-bg-${publicPageToggle.checked ? 'success' : 'secondary'}`;
             };
 
             toggle.addEventListener('change', refresh);
+            publicPageToggle.addEventListener('change', refresh);
             refresh();
         })();
     </script>
@@ -46,6 +51,7 @@
     <form action="{{ route('ronove.admin.settings.update') }}" method="POST">
         @csrf
         <input type="hidden" name="review_workflow_enabled" value="0">
+        <input type="hidden" name="public_language_page_enabled" value="0">
 
         <div class="card ronove-admin-card mb-4">
             <div class="card-header">
@@ -86,10 +92,37 @@
 
                 <div class="ronove-settings-note mt-3"><i class="bi bi-clock-history" aria-hidden="true"></i><span>{{ trans('ronove::admin.settings.revisions_help') }}</span></div>
             </div>
-            <div class="card-footer ronove-language-card-footer">
-                <span class="small text-body-secondary"><i class="bi bi-check2-circle me-1" aria-hidden="true"></i>{{ trans('ronove::admin.settings.save_hint') }}</span>
-                <button class="btn btn-primary" type="submit"><i class="bi bi-save me-1" aria-hidden="true"></i>{{ trans('messages.actions.save') }}</button>
+        </div>
+
+        <div class="card ronove-admin-card mb-4">
+            <div class="card-header">
+                <span class="ronove-admin-eyebrow">{{ trans('ronove::admin.settings.visitor_experience') }}</span>
+                <h2 class="h5 mb-1">{{ trans('ronove::admin.settings.public_language_page') }}</h2>
+                <p class="text-body-secondary small mb-0">{{ trans('ronove::admin.settings.public_language_page_description') }}</p>
             </div>
+            <div class="card-body">
+                <div class="ronove-setting-row">
+                    <div>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="ronove-setting-icon text-info bg-info bg-opacity-10" aria-hidden="true"><i class="bi bi-window"></i></span>
+                            <label class="fw-semibold" for="publicLanguagePageEnabled">{{ trans('ronove::admin.settings.public_language_page') }}</label>
+                            <span class="badge rounded-pill" id="ronovePublicPageStatus"></span>
+                        </div>
+                        <p class="text-body-secondary small mt-1 mb-0">{{ trans('ronove::admin.settings.public_language_page_help') }}</p>
+                    </div>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input @error('public_language_page_enabled') is-invalid @enderror" id="publicLanguagePageEnabled" type="checkbox" name="public_language_page_enabled" value="1" @checked(old('public_language_page_enabled', $publicLanguagePageEnabled))>
+                        <label class="visually-hidden" for="publicLanguagePageEnabled">{{ trans('ronove::admin.settings.public_language_page') }}</label>
+                        @error('public_language_page_enabled')<span class="invalid-feedback"><strong>{{ $message }}</strong></span>@enderror
+                    </div>
+                </div>
+                <div class="ronove-settings-note mt-3"><i class="bi bi-code-slash" aria-hidden="true"></i><span>{{ trans('ronove::admin.settings.public_language_page_endpoint_help') }}</span></div>
+            </div>
+        </div>
+
+        <div class="ronove-sticky-actions">
+            <span class="small text-body-secondary"><i class="bi bi-check2-circle me-1" aria-hidden="true"></i>{{ trans('ronove::admin.settings.save_hint') }}</span>
+            <button class="btn btn-primary" type="submit"><i class="bi bi-save me-1" aria-hidden="true"></i>{{ trans('messages.actions.save') }}</button>
         </div>
     </form>
     </div>

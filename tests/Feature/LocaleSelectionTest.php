@@ -8,6 +8,7 @@ use Azuriom\Plugin\Ronove\Events\LocaleChanged;
 use Azuriom\Plugin\Ronove\Models\Locale;
 use Azuriom\Plugin\Ronove\Models\UserPreference;
 use Azuriom\Plugin\Ronove\Services\LocaleManager;
+use Azuriom\Plugin\Ronove\Services\PublicLanguagePage;
 use Azuriom\Plugin\Ronove\Support\LocaleOption;
 use Azuriom\Plugin\Ronove\Tests\TestCase;
 use Illuminate\Support\Facades\Event;
@@ -126,6 +127,28 @@ class LocaleSelectionTest extends TestCase
             ->assertSee('Español')
             ->assertSee('name="locale"', false)
             ->assertSee('action="'.route('ronove.locale.update').'"', false);
+    }
+
+    public function test_the_public_page_can_be_disabled_without_disabling_language_selection(): void
+    {
+        Setting::updateSettings('locale', 'en');
+        Setting::updateSettings(PublicLanguagePage::SETTING_KEY, '0');
+        Locale::query()->create([
+            'code' => 'es_ES',
+            'name' => 'Spanish',
+            'native_name' => 'Español',
+            'is_enabled' => true,
+            'position' => 0,
+        ]);
+
+        $this->assertFalse(app(PublicLanguagePage::class)->enabled());
+        $this->assertFalse(app('ronove')->publicLanguagePageEnabled());
+        $this->get('/ronove')->assertNotFound();
+
+        $this->from('/')->post('/ronove/locale', ['locale' => 'es_ES'])
+            ->assertRedirect('/')
+            ->assertSessionHas(LocaleManager::SESSION_KEY, 'es_ES')
+            ->assertSessionHasNoErrors();
     }
 
     public function test_the_theme_api_returns_presentation_safe_language_options(): void

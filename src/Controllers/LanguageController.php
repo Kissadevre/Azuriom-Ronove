@@ -8,14 +8,17 @@ use Azuriom\Plugin\Ronove\Models\Locale;
 use Azuriom\Plugin\Ronove\Models\UserPreference;
 use Azuriom\Plugin\Ronove\Services\LanguageSwitcher;
 use Azuriom\Plugin\Ronove\Services\LocaleManager;
+use Azuriom\Plugin\Ronove\Services\PublicLanguagePage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cookie;
 use Illuminate\Validation\Rule;
 
 class LanguageController extends Controller
 {
-    public function index(LanguageSwitcher $switcher)
+    public function index(LanguageSwitcher $switcher, PublicLanguagePage $publicPage)
     {
+        abort_unless($publicPage->enabled(), 404);
+
         return view('ronove::index', [
             'languageOptions' => $switcher->options(),
         ]);
