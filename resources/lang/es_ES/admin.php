@@ -32,8 +32,10 @@ return [
         ],
     ],
     'permissions' => [
-        'settings' => 'Administrar los ajustes e idiomas de Ronove',
+        'settings' => 'Administrar los ajustes generales de Ronove',
+        'languages' => 'Administrar los idiomas y respaldos regionales de Ronove',
         'translations' => 'Administrar las traducciones de Ronove',
+        'glossary' => 'Administrar los términos del glosario de Ronove',
         'publish' => 'Publicar las traducciones de Ronove',
         'review' => 'Revisar las traducciones de Ronove',
         'audit' => 'Auditar y limpiar datos de Ronove',

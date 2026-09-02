@@ -69,7 +69,9 @@ class RonoveServiceProvider extends BasePluginServiceProvider
 
         Permission::registerPermissions([
             'ronove.settings' => 'ronove::admin.permissions.settings',
+            'ronove.languages' => 'ronove::admin.permissions.languages',
             'ronove.translations' => 'ronove::admin.permissions.translations',
+            'ronove.glossary' => 'ronove::admin.permissions.glossary',
             'ronove.publish' => 'ronove::admin.permissions.publish',
             'ronove.review' => 'ronove::admin.permissions.review',
             'ronove.audit' => 'ronove::admin.permissions.audit',
@@ -177,7 +179,7 @@ class RonoveServiceProvider extends BasePluginServiceProvider
                 'name' => trans('ronove::admin.title'),
                 'type' => 'dropdown',
                 'icon' => 'bi bi-translate',
-                'permission' => ['ronove.settings', 'ronove.translations', 'ronove.audit'],
+                'permission' => ['ronove.settings', 'ronove.languages', 'ronove.translations', 'ronove.glossary', 'ronove.audit'],
                 'route' => 'ronove.admin.*',
                 'items' => [
                     'ronove.admin.settings.index' => [
@@ -186,7 +188,7 @@ class RonoveServiceProvider extends BasePluginServiceProvider
                     ],
                     'ronove.admin.languages.index' => [
                         'name' => trans('ronove::admin.nav.languages'),
-                        'permission' => 'ronove.settings',
+                        'permission' => 'ronove.languages',
                     ],
                     'ronove.admin.translations.index' => [
                         'name' => trans('ronove::admin.nav.translations'),
@@ -194,7 +196,7 @@ class RonoveServiceProvider extends BasePluginServiceProvider
                     ],
                     'ronove.admin.glossary.index' => [
                         'name' => trans('ronove::admin.nav.glossary'),
-                        'permission' => 'ronove.translations',
+                        'permission' => 'ronove.glossary',
                     ],
                     'ronove.admin.audit.index' => [
                         'name' => trans('ronove::admin.nav.audit'),

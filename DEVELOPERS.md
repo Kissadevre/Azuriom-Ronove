@@ -772,11 +772,15 @@ Ronove registers these permissions:
 
 ```text
 ronove.settings
+ronove.languages
 ronove.translations
+ronove.glossary
 ronove.publish
 ronove.review
 ronove.audit
 ```
+
+`ronove.settings` controls the general plugin behavior, while `ronove.languages` controls enabled translation languages, country flags, and regional fallback chains. `ronove.glossary` grants access to create, edit, and delete glossary terms; translators can still consume glossary suggestions through `ronove.translations` without receiving glossary management access.
 
 An external integration can add two more authorization layers:
 

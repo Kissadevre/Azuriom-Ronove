@@ -83,11 +83,13 @@
                 <span class="ronove-disclosure-meta"><span class="badge rounded-pill text-bg-secondary">{{ $glossaryTerms->count() }}</span><i class="bi bi-chevron-down" aria-hidden="true"></i></span>
             </summary>
             <div class="card-body">
-                <div class="d-flex justify-content-end mb-3">
-                    <a class="btn btn-sm btn-outline-primary" href="{{ route('ronove.admin.glossary.index', ['scope' => $integration->id, 'locale' => $selectedLocale->code]) }}">
-                        <i class="bi bi-journal-text me-1" aria-hidden="true"></i> {{ trans('ronove::admin.glossary.manage') }}
-                    </a>
-                </div>
+                @can('ronove.glossary')
+                    <div class="d-flex justify-content-end mb-3">
+                        <a class="btn btn-sm btn-outline-primary" href="{{ route('ronove.admin.glossary.index', ['scope' => $integration->id, 'locale' => $selectedLocale->code]) }}">
+                            <i class="bi bi-journal-text me-1" aria-hidden="true"></i> {{ trans('ronove::admin.glossary.manage') }}
+                        </a>
+                    </div>
+                @endcan
                 @forelse($glossaryTerms as $term)
                     <div class="@if(! $loop->last) border-bottom pb-3 mb-3 @endif">
                         <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
