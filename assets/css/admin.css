@@ -211,6 +211,8 @@
 .ronove-glossary-term-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: .5rem; padding: .75rem 1.25rem; background: var(--bs-tertiary-bg, var(--bs-body-bg)); }
 .ronove-glossary-list-header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin: 2rem 0 .85rem; }
 .ronove-glossary-count { display: inline-grid; min-width: 2rem; height: 2rem; padding-inline: .55rem; place-items: center; border: 1px solid rgba(var(--bs-primary-rgb), .16); border-radius: 999px; color: var(--bs-primary); background: rgba(var(--bs-primary-rgb), .08); font-size: .8rem; font-weight: 750; }
+.ronove-glossary-table-header { display: flex; min-height: 4rem; align-items: center; justify-content: space-between; gap: 1rem; }
+.ronove-glossary-context { max-width: 28rem; color: var(--bs-secondary-color, var(--bs-secondary)); white-space: normal; }
 
 @media (prefers-reduced-motion: reduce) { .ronove-locale-option, .ronove-integration-card, .ronove-coverage-link, .ronove-editor-disclosure > summary .bi-chevron-down { transition: none; } }
 @media (max-width: 767.98px) {

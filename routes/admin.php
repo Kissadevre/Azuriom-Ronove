@@ -45,7 +45,9 @@ Route::prefix('/translations')->name('translations.')->middleware('can:ronove.tr
 });
 Route::prefix('/glossary')->name('glossary.')->middleware('can:ronove.translations')->group(function () {
     Route::get('/', [GlossaryController::class, 'index'])->name('index');
+    Route::get('/create', [GlossaryController::class, 'create'])->name('create');
     Route::post('/', [GlossaryController::class, 'store'])->name('store');
+    Route::get('/{term}/edit', [GlossaryController::class, 'edit'])->name('edit');
     Route::put('/{term}', [GlossaryController::class, 'update'])->name('update');
     Route::delete('/{term}', [GlossaryController::class, 'destroy'])->name('destroy');
 });
