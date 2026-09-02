@@ -52,6 +52,8 @@ class PostTranslationTest extends TestCase
             ->assertOk()
             ->assertSee('Azuriom')
             ->assertSee('News posts')
+            ->assertSee('Pages')
+            ->assertSee('General messages')
             ->assertSee('Featured posts')
             ->assertSee(route('ronove.admin.translations.integration', 'core'));
 

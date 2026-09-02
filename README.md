@@ -123,6 +123,18 @@ An integrating plugin should include the following manifest dependency so it can
 
 Ronove stores only translated alternatives and source hashes. Deleting or disabling a locale does not modify the original resource.
 
+## Built-in Azuriom content
+
+Ronove registers the following Core providers under the `core` integration:
+
+- `core.post`: visible news title and content.
+- `core.page`: visible page title and content. Page descriptions, slugs, routes, restrictions, and attachments remain original.
+- `core.site-message`: home, welcome, and maintenance HTML messages.
+- `core.registration-conditions`: inline registration conditions written as Markdown. URL-based conditions remain original and are not offered for translation.
+- `core.footer`: the visible copyright text.
+
+General settings are overlaid only for the current public request. Ronove never updates Azuriom's source settings and never overlays translated settings inside the administration panel. Site name, SEO description, keywords, URLs, navbar labels, server names, and social network names are intentionally excluded.
+
 Integrations must remove orphaned Ronove records from their model deletion event:
 
 ```php

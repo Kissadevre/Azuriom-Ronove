@@ -5,15 +5,22 @@ namespace Azuriom\Plugin\Ronove\Providers;
 use Azuriom\Extensions\Plugin\BasePluginServiceProvider;
 use Azuriom\Http\Kernel;
 use Azuriom\Models\ActionLog;
+use Azuriom\Models\Page;
 use Azuriom\Models\Permission;
 use Azuriom\Models\Post;
 use Azuriom\Plugin\Ronove\Middleware\SetLocale;
+use Azuriom\Plugin\Ronove\Providers\Resources\FooterResourceProvider;
+use Azuriom\Plugin\Ronove\Providers\Resources\PageResourceProvider;
 use Azuriom\Plugin\Ronove\Providers\Resources\PostResourceProvider;
+use Azuriom\Plugin\Ronove\Providers\Resources\RegistrationConditionsResourceProvider;
+use Azuriom\Plugin\Ronove\Providers\Resources\SiteMessageResourceProvider;
 use Azuriom\Plugin\Ronove\RonoveManager;
 use Azuriom\Plugin\Ronove\Services\LanguageSwitcher;
 use Azuriom\Plugin\Ronove\Services\LocaleManager;
+use Azuriom\Plugin\Ronove\Services\LocalizedSettings;
 use Azuriom\Plugin\Ronove\Services\ResourceRegistry;
 use Azuriom\Plugin\Ronove\Services\TranslationResolver;
+use Azuriom\Plugin\Ronove\View\Composers\PageTranslationComposer;
 use Azuriom\Plugin\Ronove\View\Composers\PostTranslationComposer;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\Support\Facades\View;
@@ -24,6 +31,7 @@ class RonoveServiceProvider extends BasePluginServiceProvider
     {
         $this->app->singleton(ResourceRegistry::class);
         $this->app->singleton(LocaleManager::class);
+        $this->app->singleton(LocalizedSettings::class);
         $this->app->singleton(LanguageSwitcher::class);
         $this->app->singleton(TranslationResolver::class);
         $this->app->singleton(RonoveManager::class);
@@ -40,6 +48,7 @@ class RonoveServiceProvider extends BasePluginServiceProvider
         $this->registerLocaleMiddleware();
         $this->registerResources();
         View::composer(['home', 'posts.index', 'posts.show'], PostTranslationComposer::class);
+        View::composer('pages.show', PageTranslationComposer::class);
 
         Permission::registerPermissions([
             'ronove.settings' => 'ronove::admin.permissions.settings',
@@ -83,9 +92,17 @@ class RonoveServiceProvider extends BasePluginServiceProvider
             order: 0,
         );
         $ronove->registerResourceType(new PostResourceProvider, 'core');
+        $ronove->registerResourceType(new PageResourceProvider, 'core');
+        $ronove->registerResourceType(new SiteMessageResourceProvider, 'core');
+        $ronove->registerResourceType(new RegistrationConditionsResourceProvider, 'core');
+        $ronove->registerResourceType(new FooterResourceProvider, 'core');
 
         Post::deleted(function (Post $post) {
             $this->app->make(RonoveManager::class)->forget('core.post', $post);
+        });
+
+        Page::deleted(function (Page $page) {
+            $this->app->make(RonoveManager::class)->forget('core.page', $page);
         });
     }
 

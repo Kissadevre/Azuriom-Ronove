@@ -3,17 +3,22 @@
 namespace Azuriom\Plugin\Ronove\Middleware;
 
 use Azuriom\Plugin\Ronove\Services\LocaleManager;
+use Azuriom\Plugin\Ronove\Services\LocalizedSettings;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 class SetLocale
 {
-    public function __construct(private readonly LocaleManager $locales) {}
+    public function __construct(
+        private readonly LocaleManager $locales,
+        private readonly LocalizedSettings $settings,
+    ) {}
 
     public function handle(Request $request, Closure $next): Response
     {
         $this->locales->apply($request);
+        $this->settings->apply($request);
 
         return $next($request);
     }

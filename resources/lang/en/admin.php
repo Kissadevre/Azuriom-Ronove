@@ -12,6 +12,20 @@ return [
     ],
     'resources' => [
         'posts' => 'News posts',
+        'pages' => 'Pages',
+        'site_messages' => 'General messages',
+        'registration_conditions' => 'Registration conditions',
+        'footer' => 'Footer',
+        'fields' => [
+            'content' => 'Visible content',
+        ],
+        'settings' => [
+            'home_message' => 'Home message',
+            'welcome_alert' => 'Welcome alert',
+            'maintenance_message' => 'Maintenance message',
+            'registration_conditions' => 'Registration conditions',
+            'copyright' => 'Copyright',
+        ],
     ],
     'permissions' => [
         'settings' => 'Manage Ronove languages',

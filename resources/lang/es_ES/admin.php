@@ -12,6 +12,20 @@ return [
     ],
     'resources' => [
         'posts' => 'Publicaciones de noticias',
+        'pages' => 'Páginas',
+        'site_messages' => 'Mensajes generales',
+        'registration_conditions' => 'Condiciones de registro',
+        'footer' => 'Pie de página',
+        'fields' => [
+            'content' => 'Contenido visible',
+        ],
+        'settings' => [
+            'home_message' => 'Mensaje de inicio',
+            'welcome_alert' => 'Aviso de bienvenida',
+            'maintenance_message' => 'Mensaje de mantenimiento',
+            'registration_conditions' => 'Condiciones de registro',
+            'copyright' => 'Copyright',
+        ],
     ],
     'permissions' => [
         'settings' => 'Administrar los idiomas de Ronove',
