@@ -98,7 +98,7 @@ class TranslationResolver
             ->where('resource_key', $provider->key($model))
             ->with(['translations.locale'])
             ->first();
-        $published = ($resource?->translations ?? collect())->filter->isPublished();
+        $published = ($resource?->translations ?? collect())->filter->hasPublishedVersion();
         $selected = LocaleCode::normalize($locale);
         $fallbackChain = array_slice($this->locales->translationChain($selected), 1);
         $global = $this->locales->globalLocale();
@@ -166,7 +166,7 @@ class TranslationResolver
         Collection $translations,
         array $localeChain,
     ): array {
-        $published = $translations->filter->isPublished();
+        $published = $translations->filter->hasPublishedVersion();
         $values = [];
 
         foreach (array_keys($provider->fields()) as $field) {
@@ -185,6 +185,10 @@ class TranslationResolver
     private function publishedValue(Collection $translations, string $field, array $localeChain): array
     {
         foreach ($localeChain as $locale) {
+            if ($locale === $this->locales->globalLocale()) {
+                continue;
+            }
+
             $translation = $translations->first(
                 fn (Translation $translation) => $translation->locale?->code === $locale
             );
@@ -200,7 +204,7 @@ class TranslationResolver
 
     private function filledValue(?Translation $translation, string $field): ?string
     {
-        $value = $translation?->values[$field] ?? null;
+        $value = $translation?->publicValues()[$field] ?? null;
 
         return is_string($value) && trim($value) !== '' ? $value : null;
     }

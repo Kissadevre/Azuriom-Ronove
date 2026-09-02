@@ -16,6 +16,56 @@ use Azuriom\Plugin\Ronove\Tests\TestCase;
 
 class GlossaryAndNotesTest extends TestCase
 {
+    public function test_glossary_index_uses_a_table_and_separate_create_and_edit_pages(): void
+    {
+        Setting::updateSettings('locale', 'en');
+        $admin = $this->user(admin: true);
+        $spanish = $this->locale('es_ES', 'Español');
+        $term = GlossaryTerm::query()->create([
+            'scope' => GlossaryTerm::GLOBAL_SCOPE,
+            'locale_id' => $spanish->id,
+            'source_text' => 'Server',
+            'translated_text' => 'Servidor',
+            'context' => 'Infrastructure terminology.',
+        ]);
+
+        $indexUrl = route('ronove.admin.glossary.index', [
+            'scope' => GlossaryTerm::GLOBAL_SCOPE,
+            'locale' => $spanish->code,
+        ]);
+
+        $this->actingAs($admin)
+            ->get($indexUrl)
+            ->assertOk()
+            ->assertSee('<table', false)
+            ->assertSee('Server')
+            ->assertSee('Servidor')
+            ->assertSee(route('ronove.admin.glossary.create', [
+                'scope' => GlossaryTerm::GLOBAL_SCOPE,
+                'locale' => $spanish->code,
+            ]))
+            ->assertSee(route('ronove.admin.glossary.edit', $term), false)
+            ->assertDontSee('name="source_text"', false)
+            ->assertDontSee('name="translated_text"', false);
+
+        $this->actingAs($admin)
+            ->get(route('ronove.admin.glossary.create', [
+                'scope' => GlossaryTerm::GLOBAL_SCOPE,
+                'locale' => $spanish->code,
+            ]))
+            ->assertOk()
+            ->assertSee('Add glossary term')
+            ->assertSee('name="source_text"', false)
+            ->assertSee('value="es_ES" selected', false);
+
+        $this->actingAs($admin)
+            ->get(route('ronove.admin.glossary.edit', $term))
+            ->assertOk()
+            ->assertSee('Edit glossary term')
+            ->assertSee('value="Server"', false)
+            ->assertSee('value="Servidor"', false);
+    }
+
     public function test_glossary_terms_are_scoped_searchable_and_suggested_without_translating_content(): void
     {
         Setting::updateSettings('locale', 'en');

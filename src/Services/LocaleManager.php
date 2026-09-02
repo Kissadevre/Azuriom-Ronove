@@ -17,7 +17,7 @@ class LocaleManager
 
     public function globalLocale(): string
     {
-        return LocaleCode::normalize(setting('locale', config('app.locale', 'en')));
+        return Locale::globalCode();
     }
 
     /**
@@ -27,6 +27,7 @@ class LocaleManager
     {
         return Locale::query()
             ->where('is_enabled', true)
+            ->translationTargets()
             ->orderBy('position')
             ->orderBy('id')
             ->get();
@@ -73,9 +74,10 @@ class LocaleManager
     public function resolve(Request $request): string
     {
         $enabled = $this->enabled();
+        $global = $this->globalLocale();
 
         if ($enabled->isEmpty()) {
-            return $this->globalLocale();
+            return $global;
         }
 
         $enabledByCode = $enabled->keyBy('code');
@@ -99,6 +101,10 @@ class LocaleManager
 
             $normalized = LocaleCode::normalize($candidate);
 
+            if ($normalized === $global) {
+                return $global;
+            }
+
             if ($enabledByCode->has($normalized)) {
                 return $normalized;
             }
@@ -120,9 +126,7 @@ class LocaleManager
             }
         }
 
-        $global = $this->globalLocale();
-
-        return $enabledByCode->has($global) ? $global : $enabled->first()->code;
+        return $global;
     }
 
     public function apply(Request $request): string

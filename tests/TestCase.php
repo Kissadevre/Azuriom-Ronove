@@ -64,6 +64,7 @@ abstract class TestCase extends BaseTestCase
 
         (require dirname(__DIR__, 3).'/database/migrations/2014_10_12_000000_create_users_table.php')->up();
         (require dirname(__DIR__, 3).'/database/migrations/2019_08_15_000000_create_roles_table.php')->up();
+        (require dirname(__DIR__, 3).'/database/migrations/2019_08_30_000000_create_permissions_table.php')->up();
         (require dirname(__DIR__, 3).'/database/migrations/2019_10_06_000000_create_bans_table.php')->up();
         (require dirname(__DIR__, 3).'/database/migrations/2023_06_03_add_password_changed_at_to_users_table.php')->up();
         (require dirname(__DIR__, 3).'/database/migrations/2019_08_12_000000_create_posts_table.php')->up();

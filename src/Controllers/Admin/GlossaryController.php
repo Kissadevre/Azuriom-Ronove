@@ -22,6 +22,7 @@ class GlossaryController extends Controller
         $scopes = $this->accessibleScopes($registry);
         $locales = Locale::query()
             ->where('is_enabled', true)
+            ->translationTargets()
             ->orderBy('position')
             ->orderBy('id')
             ->get();
@@ -29,7 +30,9 @@ class GlossaryController extends Controller
             'scope' => ['nullable', 'string', Rule::in($scopes->keys())],
             'locale' => [
                 'nullable', 'string',
-                Rule::exists('ronove_locales', 'code')->where('is_enabled', true),
+                Rule::exists('ronove_locales', 'code')->where(fn ($query) => $query
+                    ->where('is_enabled', true)
+                    ->where('code', '!=', Locale::globalCode())),
             ],
             'search' => ['nullable', 'string', 'max:100'],
         ]);
@@ -87,6 +90,37 @@ class GlossaryController extends Controller
         ])->with('success', trans('ronove::admin.glossary.saved'));
     }
 
+    public function create(Request $request, ResourceRegistry $registry)
+    {
+        $scopes = $this->accessibleScopes($registry);
+        $locales = $this->enabledLocales();
+        $selectedScope = $scopes->has((string) $request->query('scope'))
+            ? (string) $request->query('scope')
+            : GlossaryTerm::GLOBAL_SCOPE;
+        $selectedLocale = $locales->firstWhere('code', $request->query('locale')) ?? $locales->first();
+
+        return view('ronove::admin.glossary.form', [
+            'term' => null,
+            'scopes' => $scopes,
+            'locales' => $locales,
+            'selectedScope' => $selectedScope,
+            'selectedLocale' => $selectedLocale,
+        ]);
+    }
+
+    public function edit(ResourceRegistry $registry, GlossaryTerm $term)
+    {
+        $this->authorizeTerm($registry, $term);
+
+        return view('ronove::admin.glossary.form', [
+            'term' => $term,
+            'scopes' => $this->accessibleScopes($registry),
+            'locales' => $this->enabledLocales(),
+            'selectedScope' => $term->scope,
+            'selectedLocale' => $term->locale,
+        ]);
+    }
+
     public function update(
         Request $request,
         ResourceRegistry $registry,
@@ -138,7 +172,9 @@ class GlossaryController extends Controller
             'scope' => ['required', 'string', 'max:80', Rule::in($this->accessibleScopes($registry)->keys())],
             'locale' => [
                 'required', 'string',
-                Rule::exists('ronove_locales', 'code')->where('is_enabled', true),
+                Rule::exists('ronove_locales', 'code')->where(fn ($query) => $query
+                    ->where('is_enabled', true)
+                    ->where('code', '!=', Locale::globalCode())),
             ],
             'source_text' => ['required', 'string', 'not_regex:/^\s*$/u', 'max:100'],
             'translated_text' => ['required', 'string', 'not_regex:/^\s*$/u', 'max:191'],
@@ -195,6 +231,16 @@ class GlossaryController extends Controller
                 ),
                 $scopes,
             );
+    }
+
+    private function enabledLocales(): Collection
+    {
+        return Locale::query()
+            ->where('is_enabled', true)
+            ->translationTargets()
+            ->orderBy('position')
+            ->orderBy('id')
+            ->get();
     }
 
     private function optionalText(mixed $value): ?string

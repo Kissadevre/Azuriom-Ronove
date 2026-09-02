@@ -9,7 +9,7 @@
         <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="{{ trans('ronove::messages.language') }}">
             <i class="bi bi-translate" aria-hidden="true"></i>
             @if($showCurrentName && $currentRonoveLanguage !== null)
-                <span class="ms-1">{{ $currentRonoveLanguage->nativeName }}</span>
+                <span class="ms-1 d-inline-flex align-items-center gap-1">@include('ronove::_locale-flag', ['flagCode' => $currentRonoveLanguage->flagCode]) {{ $currentRonoveLanguage->nativeName }}</span>
             @else
                 <span class="visually-hidden">{{ trans('ronove::messages.language') }}</span>
             @endif
@@ -21,7 +21,8 @@
                         @csrf
                         <input type="hidden" name="locale" value="{{ $ronoveLanguage->code }}">
                         <button class="dropdown-item @if($ronoveLanguage->isCurrent) active @endif" type="submit" @if($ronoveLanguage->isCurrent) aria-current="true" @endif>
-                            {{ $ronoveLanguage->nativeName }}
+                            @include('ronove::_locale-flag', ['flagCode' => $ronoveLanguage->flagCode])
+                            <span class="ms-2">{{ $ronoveLanguage->nativeName }}</span>
                         </button>
                     </form>
                 </li>

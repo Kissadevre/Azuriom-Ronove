@@ -6,7 +6,9 @@ use Azuriom\Plugin\Ronove\Contracts\ResourceProvider;
 use Azuriom\Plugin\Ronove\Models\Locale;
 use Azuriom\Plugin\Ronove\Models\Resource;
 use Azuriom\Plugin\Ronove\Services\LanguageSwitcher;
+use Azuriom\Plugin\Ronove\Services\PublicLanguagePage;
 use Azuriom\Plugin\Ronove\Services\ResourceRegistry;
+use Azuriom\Plugin\Ronove\Services\ReviewWorkflow;
 use Azuriom\Plugin\Ronove\Services\TranslationCoverage;
 use Azuriom\Plugin\Ronove\Services\TranslationResolver;
 use Azuriom\Plugin\Ronove\Support\LocaleOption;
@@ -23,6 +25,8 @@ class RonoveManager
         private readonly TranslationResolver $translations,
         private readonly LanguageSwitcher $languageSwitcher,
         private readonly TranslationCoverage $translationCoverage,
+        private readonly ReviewWorkflow $reviewWorkflow,
+        private readonly PublicLanguagePage $publicLanguagePage,
     ) {}
 
     public function registerIntegration(
@@ -71,6 +75,16 @@ class RonoveManager
         return $this->languageSwitcher->updateUrl();
     }
 
+    public function reviewWorkflowEnabled(): bool
+    {
+        return $this->reviewWorkflow->enabled();
+    }
+
+    public function publicLanguagePageEnabled(): bool
+    {
+        return $this->publicLanguagePage->enabled();
+    }
+
     public function translate(string $type, Model $resource, string $field, ?string $locale = null): ?string
     {
         return $this->translations->translate($type, $resource, $field, $locale);
@@ -99,6 +113,7 @@ class RonoveManager
         $localeModel = Locale::query()
             ->where('code', $locale)
             ->where('is_enabled', true)
+            ->translationTargets()
             ->first();
 
         if ($localeModel === null) {

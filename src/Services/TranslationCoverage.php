@@ -31,9 +31,14 @@ class TranslationCoverage
 
         foreach ($models as $key => $model) {
             $translation = $records->get($key)?->translations->first();
-            $statuses[$key] = $translation?->status ?? TranslationCoverageReport::MISSING;
+            $statuses[$key] = $translation?->hasPublishedVersion()
+                ? Translation::PUBLISHED
+                : ($translation?->status ?? TranslationCoverageReport::MISSING);
+            $storedSourceHash = $translation?->hasPublishedVersion()
+                ? ($translation->published_source_hash ?? $translation->source_hash)
+                : $translation?->source_hash;
             $outdated[$key] = $translation instanceof Translation
-                && $translation->source_hash !== $this->resolver->sourceHash($provider, $model);
+                && $storedSourceHash !== $this->resolver->sourceHash($provider, $model);
         }
 
         return new TranslationCoverageReport($statuses, $outdated);

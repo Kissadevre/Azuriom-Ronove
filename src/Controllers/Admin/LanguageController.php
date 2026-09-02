@@ -6,6 +6,7 @@ use Azuriom\Http\Controllers\Controller;
 use Azuriom\Http\Controllers\InstallController;
 use Azuriom\Models\ActionLog;
 use Azuriom\Plugin\Ronove\Models\Locale;
+use Azuriom\Plugin\Ronove\Support\CountryFlag;
 use Azuriom\Plugin\Ronove\Support\LocaleCode;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -16,6 +17,7 @@ class LanguageController extends Controller
 {
     public function index()
     {
+        $globalLocale = Locale::globalCode();
         $configuredLocales = Locale::query()
             ->with('fallback')
             ->orderBy('position')
@@ -23,33 +25,55 @@ class LanguageController extends Controller
             ->get()
             ->keyBy('code');
 
+        $availableLocales = InstallController::getAvailableLocales()
+            ->reject(fn (string $name, string $code) => LocaleCode::normalize($code) === $globalLocale);
+
         return view('ronove::admin.languages', [
-            'availableLocales' => InstallController::getAvailableLocales(),
+            'availableLocales' => $availableLocales,
             'configuredLocales' => $configuredLocales,
-            'enabledLocales' => $configuredLocales->filter(fn (Locale $locale) => $locale->is_enabled),
-            'globalLocale' => LocaleCode::normalize(setting('locale', config('app.locale'))),
+            'enabledLocales' => $configuredLocales->filter(
+                fn (Locale $locale) => $locale->is_enabled && $locale->isTranslationTarget()
+            ),
+            'globalLocale' => $globalLocale,
+            'globalLocaleName' => InstallController::getAvailableLocales()->get($globalLocale, $globalLocale),
         ]);
     }
 
     public function update(Request $request)
     {
-        $available = InstallController::getAvailableLocaleCodes()->all();
+        $allAvailable = InstallController::getAvailableLocaleCodes()->all();
+        $globalLocale = Locale::globalCode();
+        $available = collect($allAvailable)
+            ->map(LocaleCode::normalize(...))
+            ->reject(fn (string $code) => $code === $globalLocale)
+            ->values()
+            ->all();
         $validated = $request->validate([
-            'locales' => ['required', 'array', 'min:1'],
+            'locales' => ['sometimes', 'array'],
             'locales.*' => ['required', 'string', 'distinct', Rule::in($available)],
+            'flags' => ['sometimes', 'array'],
+            'flags.*' => ['nullable', 'string', 'size:2', 'regex:/^[A-Za-z]{2}$/'],
         ]);
-        $enabled = array_map(LocaleCode::normalize(...), $validated['locales']);
+        $enabled = array_map(LocaleCode::normalize(...), $validated['locales'] ?? []);
+        $flags = collect($validated['flags'] ?? [])->mapWithKeys(
+            fn ($flag, $code) => [LocaleCode::normalize((string) $code) => CountryFlag::normalize($flag)]
+        );
+        $configured = Locale::query()->get()->keyBy('code');
 
-        DB::transaction(function () use ($available, $enabled) {
-            foreach ($available as $position => $code) {
+        DB::transaction(function () use ($allAvailable, $configured, $enabled, $flags) {
+            foreach ($allAvailable as $position => $code) {
                 $normalized = LocaleCode::normalize($code);
                 $nativeName = trans('messages.lang', [], $normalized);
+                $existing = $configured->get($normalized);
 
                 Locale::query()->updateOrCreate(
                     ['code' => $normalized],
                     [
                         'name' => $nativeName,
                         'native_name' => $nativeName,
+                        'flag_code' => $flags->has($normalized)
+                            ? $flags->get($normalized)
+                            : ($existing?->flag_code ?? CountryFlag::defaultForLocale($normalized)),
                         'is_enabled' => in_array($normalized, $enabled, true),
                         'position' => $position,
                     ],
@@ -75,6 +99,7 @@ class LanguageController extends Controller
     {
         $enabledLocales = Locale::query()
             ->where('is_enabled', true)
+            ->translationTargets()
             ->orderBy('position')
             ->orderBy('id')
             ->get();

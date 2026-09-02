@@ -2,6 +2,8 @@
 
 Ronove provides per-visitor locales and optional translated alternatives for visible Azuriom content. Original records remain the source of truth: Ronove never changes slugs, routes, or SEO-only fields.
 
+Complete integration guidance for plugins, themes, and automated coding agents is available in [DEVELOPERS.md](DEVELOPERS.md).
+
 ## Registering plugin content
 
 An integrating plugin first registers its translation integration and then associates one or more resource providers with it:
@@ -95,13 +97,13 @@ $coverage->keysFor('outdated');
 
 A translation is outdated when its saved source hash no longer matches the provider's current original visible fields. This status is informative: published translations remain publicly available until a human reviews and saves them again. `outdated` can overlap `draft` or `published`; it is not a third persistence status.
 
-Published values resolve independently per field in this order: selected locale, its configured regional fallback chain, Azuriom global locale, original value. Drafts are never shown publicly, including drafts stored in fallback languages.
+Published values resolve independently per field in this order: selected locale, its configured regional fallback chain, and Azuriom's original value. Azuriom's global locale represents the original content language and is not stored as another Ronove translation target. Drafts are never shown publicly, including drafts stored in fallback languages.
 
 ## Regional fallbacks
 
 Administrators configure regional fallback chains from Ronove's Languages page. Each enabled locale can point to another enabled locale, for example `es_MX` to `es_ES`. Chains may contain multiple levels, but Ronove rejects self-references and cycles.
 
-The global Azuriom locale is always tried after the configured regional chain. A defensive cycle guard is also applied while resolving content in case locale records were modified outside Ronove. The same chain is installed in Laravel's translator for Azuriom and compatible plugin language files, so interface strings and translated content follow consistent rules.
+Azuriom's original content is always used after the configured regional chain. A defensive cycle guard is also applied while resolving content in case locale records were modified outside Ronove. The corresponding locale chain is installed in Laravel's translator for Azuriom and compatible plugin language files, so interface strings and translated content follow consistent rules.
 
 Disabling a locale clears fallbacks owned by it and references pointing to it. Existing source content and translations are never changed.
 
@@ -111,6 +113,14 @@ Every translation editor includes a field-by-field comparison between the origin
 
 The **Update preview** action accepts the current unsaved form values, renders rich text and Markdown with their corresponding presentation, and applies the public fallback chain without writing to the database, changing publication status, adding action logs, or dispatching translation events.
 
+## Review workflow and revision history
+
+The review workflow is optional and disabled by default from Ronove's Settings page. With it disabled, authorized administrators keep the direct draft and publish controls, which is appropriate when the same person translates and publishes content. With it enabled, translators can save a draft or submit it for review; submitted text remains private until a user with both `ronove.review` and `ronove.publish` approves and publishes it. When an approved translation is edited, visitors continue seeing its last approved version throughout the new review. Reviewers may instead request changes with required feedback.
+
+The integration page exposes a review-status filter while the workflow is enabled, allowing reviewers to find pending or returned translations by language and content type. Integrating plugins can inspect the current mode through `app('ronove')->reviewWorkflowEnabled()`. The workflow also adds `TranslationSubmittedForReview` and `TranslationReviewCompleted` events.
+
+Revision history is independent from the optional workflow and is always recorded automatically. Every save, submission, review decision, and restoration creates an immutable snapshot with its actor, publication state, review state, source hash, values, and optional feedback. Restoring a snapshot never silently republishes old text: it creates a new draft, keeps any currently approved version public, and adds another revision to the history.
+
 ## Glossary and internal notes
 
 The translation center links to a human-maintained glossary. Terms are stored for one target locale and can be global or scoped to a registered integration. An integration-specific term is therefore available to all of that integration's resource providers without leaking into unrelated plugins.
@@ -119,13 +129,21 @@ When an original resource contains a glossary term, its preferred translation an
 
 Each resource and target locale can also have one internal note. Notes are stored independently from translations, remain private to administrators, and do not create drafts, affect coverage, participate in fallbacks, or appear on public pages. Deleting the source resource removes its notes through the same Ronove resource lifecycle.
 
+## Audit and cleanup
+
+Administrators with the dedicated `ronove.audit` permission can generate a read-only consistency report from the current database state. The audit detects empty internal resources, unavailable providers, missing original resources, empty or malformed translations, invalid statuses, outdated source hashes, blank notes, unavailable glossary scopes, preferences for disabled languages, and invalid regional fallback chains.
+
+Cleanup is always explicit and limited to one category. Ronove recalculates that category immediately before making changes, records the operation in Azuriom's action log, and preserves valid translation values whenever possible. Deleting translations through cleanup dispatches `TranslationDeleted` just like an individual deletion. Outdated translations are informational and never have an automatic cleanup action because they require human review.
+
 ## Integration events
 
 Plugins may listen to the following public events:
 
 - `TranslationSaved`: dispatched after every successful translation save with `resourceType`, `resourceKey`, `locale`, `status`, `values`, and `previousStatus`.
-- `TranslationPublished`: dispatched only when a translation enters the `published` status. Re-saving an already published translation does not emit it again.
+- `TranslationPublished`: dispatched when direct editing first enters the `published` status and whenever the review workflow approves a new public version. Re-saving an already published translation in direct mode does not emit it again.
 - `TranslationDeleted`: dispatched after an existing translation is deleted with its previous status.
+- `TranslationSubmittedForReview`: dispatched when a translation enters the pending review state, with `resourceType`, `resourceKey`, `locale`, and `userId`.
+- `TranslationReviewCompleted`: dispatched after approval or a change request, with `resourceType`, `resourceKey`, `locale`, `decision`, `feedback`, and `reviewerId`.
 - `LocaleChanged`: dispatched after a visitor's preference is persisted, with the selected locale and the authenticated user ID when available.
 
 The event payloads contain stable scalar values and arrays instead of mutable Eloquent models. A listener can therefore decide whether an event belongs to its registered resource type without depending on Ronove's internal storage models:
@@ -149,7 +167,7 @@ Ronove owns locale resolution and persistence while the active theme owns the se
 
 ### Universal page
 
-The `ronove.index` route displays a standalone language page. It is registered in Azuriom's plugin route descriptions, so administrators can add it to the navbar without editing a theme.
+The `ronove.index` route (`GET /ronove`) displays a standalone language page when that page is enabled in Ronove's settings. Administrators may disable it and rely entirely on a theme selector; the locale update endpoint remains available in either mode.
 
 ### Reusable theme views
 
@@ -196,7 +214,7 @@ Themes that need custom markup can consume presentation-safe options without dep
 @endforeach
 ```
 
-Each option exposes `code`, `name`, `nativeName`, and `isCurrent`. The current option is also available through `app('ronove')->currentLanguage()`. Locale changes must use the POST endpoint returned by `languageUpdateUrl()` so CSRF validation and guest or authenticated persistence remain centralized in Ronove.
+Each option exposes `code`, `name`, `nativeName`, `isCurrent`, and the optional `flagCode`. The current option is also available through `app('ronove')->currentLanguage()`. Locale changes must use the POST endpoint returned by `languageUpdateUrl()` so CSRF validation and guest or authenticated persistence remain centralized in Ronove.
 
 Themes must not write Ronove cookies or user preferences directly.
 
@@ -207,7 +225,7 @@ An integrating plugin should include the following manifest dependency so it can
 ```json
 {
     "dependencies": {
-        "ronove": ">=0.9.0"
+        "ronove": ">=1.0.0"
     }
 }
 ```
@@ -215,6 +233,8 @@ An integrating plugin should include the following manifest dependency so it can
 Ronove stores only translated alternatives and source hashes. Deleting or disabling a locale does not modify the original resource.
 
 Ronove intentionally has no automatic or machine-translation workflow. Translation text is authored and reviewed by administrators so wording, voice, and context remain under human control.
+
+Ronove 1.0 ships one consolidated, reversible schema migration as its public baseline. Every schema change after 1.0 must use a new dated migration so installed sites can upgrade without rebuilding tables or losing translations.
 
 ## Built-in Azuriom content
 

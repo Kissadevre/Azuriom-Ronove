@@ -11,10 +11,11 @@ final class LocaleOption implements JsonSerializable
         public readonly string $name,
         public readonly string $nativeName,
         public readonly bool $isCurrent,
+        public readonly ?string $flagCode = null,
     ) {}
 
     /**
-     * @return array{code: string, name: string, native_name: string, is_current: bool}
+     * @return array{code: string, name: string, native_name: string, is_current: bool, flag_code: string|null}
      */
     public function jsonSerialize(): array
     {
@@ -23,6 +24,7 @@ final class LocaleOption implements JsonSerializable
             'name' => $this->name,
             'native_name' => $this->nativeName,
             'is_current' => $this->isCurrent,
+            'flag_code' => $this->flagCode,
         ];
     }
 }

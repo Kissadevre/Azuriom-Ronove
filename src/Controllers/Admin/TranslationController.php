@@ -9,14 +9,18 @@ use Azuriom\Plugin\Ronove\Contracts\ResourceProvider;
 use Azuriom\Plugin\Ronove\Events\TranslationDeleted;
 use Azuriom\Plugin\Ronove\Events\TranslationPublished;
 use Azuriom\Plugin\Ronove\Events\TranslationSaved;
+use Azuriom\Plugin\Ronove\Events\TranslationSubmittedForReview;
 use Azuriom\Plugin\Ronove\Models\GlossaryTerm;
 use Azuriom\Plugin\Ronove\Models\Locale;
 use Azuriom\Plugin\Ronove\Models\Resource;
 use Azuriom\Plugin\Ronove\Models\Translation;
 use Azuriom\Plugin\Ronove\Models\TranslationNote;
+use Azuriom\Plugin\Ronove\Models\TranslationRevision;
 use Azuriom\Plugin\Ronove\Services\ResourceRegistry;
+use Azuriom\Plugin\Ronove\Services\ReviewWorkflow;
 use Azuriom\Plugin\Ronove\Services\TranslationCoverage;
 use Azuriom\Plugin\Ronove\Services\TranslationResolver;
+use Azuriom\Plugin\Ronove\Services\TranslationRevisionRecorder;
 use Azuriom\Plugin\Ronove\Support\TranslationCoverageReport;
 use Azuriom\Plugin\Ronove\Support\TranslationIntegration;
 use Illuminate\Database\Eloquent\Model;
@@ -25,6 +29,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class TranslationController extends Controller
 {
@@ -51,6 +56,7 @@ class TranslationController extends Controller
         Request $request,
         ResourceRegistry $registry,
         TranslationCoverage $coverage,
+        ReviewWorkflow $workflow,
         string $integration,
     ) {
         abort_unless($registry->hasIntegration($integration), 404);
@@ -67,21 +73,27 @@ class TranslationController extends Controller
         $validated = $request->validate([
             'locale' => [
                 'nullable', 'string',
-                Rule::exists('ronove_locales', 'code')->where('is_enabled', true),
+                Rule::exists('ronove_locales', 'code')->where(fn ($query) => $query
+                    ->where('is_enabled', true)
+                    ->where('code', '!=', Locale::globalCode())),
             ],
             'status' => ['nullable', 'string', Rule::in(TranslationCoverageReport::FILTERS)],
+            'review_status' => ['nullable', 'string', Rule::in(Translation::REVIEW_STATUSES)],
             'search' => ['nullable', 'string', 'max:100'],
         ]);
-        $locales = Locale::query()->where('is_enabled', true)->orderBy('position')->get();
+        $locales = Locale::query()->where('is_enabled', true)->translationTargets()->orderBy('position')->get();
         $selectedLocale = isset($validated['locale'])
             ? $locales->firstWhere('code', $validated['locale'])
             : $locales->first();
         $status = $validated['status'] ?? null;
+        $reviewStatus = $validated['review_status'] ?? null;
         $search = trim($validated['search'] ?? '');
         $filterable = $provider instanceof FilterableResourceProvider;
+        $reviewWorkflowEnabled = $workflow->enabled();
 
-        abort_if(! $filterable && ($status !== null || $search !== ''), 422);
-        abort_if($status !== null && $selectedLocale === null, 422);
+        abort_if(! $filterable && ($status !== null || $reviewStatus !== null || $search !== ''), 422);
+        abort_if(($status !== null || $reviewStatus !== null) && $selectedLocale === null, 422);
+        abort_if($reviewStatus !== null && ! $reviewWorkflowEnabled, 422);
 
         $report = $selectedLocale === null ? null : $coverage->report($provider, $selectedLocale);
         $query = $provider->query();
@@ -92,6 +104,16 @@ class TranslationController extends Controller
 
         if ($filterable && $status !== null && $report !== null) {
             $provider->applyResourceKeys($query, $report->keysFor($status));
+        }
+
+        if ($filterable && $reviewStatus !== null && $selectedLocale !== null) {
+            $keys = Resource::query()
+                ->where('resource_type', $provider->type())
+                ->whereHas('translations', fn ($translationQuery) => $translationQuery
+                    ->where('locale_id', $selectedLocale->id)
+                    ->where('review_status', $reviewStatus))
+                ->pluck('resource_key');
+            $provider->applyResourceKeys($query, $keys);
         }
 
         $resources = $query->paginate(20)->withQueryString();
@@ -115,7 +137,9 @@ class TranslationController extends Controller
             'coverage' => $report,
             'filterable' => $filterable,
             'statusFilter' => $status,
+            'reviewStatusFilter' => $reviewStatus,
             'searchFilter' => $search,
+            'reviewWorkflowEnabled' => $reviewWorkflowEnabled,
         ]);
     }
 
@@ -125,11 +149,12 @@ class TranslationController extends Controller
         string $type,
         string $key,
         TranslationResolver $resolver,
+        ReviewWorkflow $workflow,
     ) {
         $provider = $this->provider($registry, $type);
         $model = $this->model($provider, $key);
 
-        return $this->editorView($request, $registry, $provider, $model, $resolver);
+        return $this->editorView($request, $registry, $provider, $model, $resolver, $workflow);
     }
 
     public function preview(
@@ -138,10 +163,11 @@ class TranslationController extends Controller
         string $type,
         string $key,
         TranslationResolver $resolver,
+        ReviewWorkflow $workflow,
     ) {
         $provider = $this->provider($registry, $type);
         $model = $this->model($provider, $key);
-        $validated = $request->validate($this->translationRules($provider));
+        $validated = $request->validate($this->translationRules($provider, $workflow->enabled()));
         $values = $this->validatedValues($provider, $validated);
 
         return $this->editorView(
@@ -150,8 +176,9 @@ class TranslationController extends Controller
             $provider,
             $model,
             $resolver,
+            $workflow,
             $values,
-            $validated['status'],
+            $validated['status'] ?? Translation::DRAFT,
             true,
         );
     }
@@ -162,11 +189,12 @@ class TranslationController extends Controller
         ResourceProvider $provider,
         Model $model,
         TranslationResolver $resolver,
+        ReviewWorkflow $workflow,
         ?array $editorValues = null,
         ?string $formStatus = null,
         bool $previewGenerated = false,
     ) {
-        $locales = Locale::query()->where('is_enabled', true)->orderBy('position')->get();
+        $locales = Locale::query()->where('is_enabled', true)->translationTargets()->orderBy('position')->get();
         $selectedCode = $request->string('locale')->toString();
         $showOriginal = $selectedCode === '' || $selectedCode === 'original';
         $selectedLocale = $showOriginal ? null : $locales->firstWhere('code', $selectedCode);
@@ -177,7 +205,7 @@ class TranslationController extends Controller
         $resource = Resource::query()
             ->where('resource_type', $provider->type())
             ->where('resource_key', $provider->key($model))
-            ->with(['translations.locale', 'notes.locale'])
+            ->with(['translations.locale', 'translations.reviewer', 'notes.locale'])
             ->first();
         $translation = $selectedLocale === null
             ? null
@@ -188,6 +216,12 @@ class TranslationController extends Controller
         $editorValues ??= $translation?->values ?? [];
         $formStatus ??= $translation?->status ?? Translation::DRAFT;
         $integration = $registry->integrationFor($provider->type());
+        $reviewWorkflowEnabled = $workflow->enabled();
+        $revisions = $translation?->revisions()
+            ->with('user')
+            ->latest('id')
+            ->paginate(10, ['*'], 'revision_page')
+            ->withQueryString();
 
         return view('ronove::admin.translations.edit', [
             'integration' => $integration,
@@ -201,6 +235,9 @@ class TranslationController extends Controller
             'translationNote' => $note,
             'sourceHash' => $resolver->sourceHash($provider, $model),
             'canPublish' => Gate::allows('ronove.publish'),
+            'canReview' => Gate::allows('ronove.review'),
+            'reviewWorkflowEnabled' => $reviewWorkflowEnabled,
+            'revisions' => $revisions,
             'editorValues' => $editorValues,
             'formStatus' => $formStatus,
             'previewGenerated' => $previewGenerated,
@@ -219,19 +256,54 @@ class TranslationController extends Controller
         string $type,
         string $key,
         TranslationResolver $resolver,
+        ReviewWorkflow $workflow,
+        TranslationRevisionRecorder $revisions,
     ) {
         $provider = $this->provider($registry, $type);
         $model = $this->model($provider, $key);
-        $validated = $request->validate($this->translationRules($provider));
+        $reviewWorkflowEnabled = $workflow->enabled();
+        $validated = $request->validate($this->translationRules($provider, $reviewWorkflowEnabled, true));
+        $workflowAction = $reviewWorkflowEnabled ? $validated['workflow_action'] : null;
+        $publishFromReview = $reviewWorkflowEnabled && $workflowAction === 'publish';
+        $status = $reviewWorkflowEnabled
+            ? ($publishFromReview ? Translation::PUBLISHED : Translation::DRAFT)
+            : $validated['status'];
 
-        if ($validated['status'] === Translation::PUBLISHED) {
+        if ($publishFromReview) {
+            Gate::authorize('ronove.review');
+            Gate::authorize('ronove.publish');
+        }
+
+        if (! $reviewWorkflowEnabled && $status === Translation::PUBLISHED) {
             Gate::authorize('ronove.publish');
         }
 
         $locale = Locale::query()->where('code', $validated['locale'])->firstOrFail();
+        abort_unless($locale->is_enabled && $locale->isTranslationTarget(), 404);
         $values = $this->validatedValues($provider, $validated);
+        $userId = $request->user() === null
+            ? null
+            : (int) $request->user()->getAuthIdentifier();
 
-        [$translation, $previousStatus] = DB::transaction(function () use ($provider, $model, $locale, $validated, $values, $resolver) {
+        if ($reviewWorkflowEnabled && in_array($workflowAction, ['submit', 'publish'], true) && $values === []) {
+            throw ValidationException::withMessages([
+                'values' => trans('ronove::admin.reviews.empty_submission'),
+            ]);
+        }
+
+        [$translation, $previousStatus] = DB::transaction(function () use (
+            $provider,
+            $model,
+            $locale,
+            $values,
+            $resolver,
+            $reviewWorkflowEnabled,
+            $workflowAction,
+            $publishFromReview,
+            $status,
+            $revisions,
+            $userId,
+        ) {
             $resource = Resource::query()->firstOrCreate([
                 'resource_type' => $provider->type(),
                 'resource_key' => $provider->key($model),
@@ -239,7 +311,30 @@ class TranslationController extends Controller
             $existing = Translation::query()
                 ->where('resource_id', $resource->id)
                 ->where('locale_id', $locale->id)
+                ->lockForUpdate()
                 ->first();
+
+            $reviewStatus = $reviewWorkflowEnabled
+                ? match ($workflowAction) {
+                    'submit' => Translation::REVIEW_PENDING,
+                    'publish' => Translation::REVIEW_APPROVED,
+                    default => Translation::REVIEW_DRAFT,
+                }
+            : ($status === Translation::PUBLISHED ? Translation::REVIEW_APPROVED : Translation::REVIEW_DRAFT);
+            $sourceHash = $resolver->sourceHash($provider, $model);
+            $publishedValues = $reviewWorkflowEnabled
+                ? ($publishFromReview ? $values : $existing?->publicValues())
+                : ($status === Translation::PUBLISHED ? $values : null);
+            $publishedSourceHash = $reviewWorkflowEnabled
+                ? ($publishFromReview ? $sourceHash : ($existing?->published_source_hash ?? ($existing?->isPublished() ? $existing->source_hash : null)))
+                : ($status === Translation::PUBLISHED ? $sourceHash : null);
+            $preserveFeedback = $reviewWorkflowEnabled
+                && $workflowAction === 'save'
+                && $existing?->review_feedback !== null
+                && in_array($existing->review_status, [
+                    Translation::REVIEW_DRAFT,
+                    Translation::REVIEW_CHANGES_REQUESTED,
+                ], true);
 
             $translation = Translation::query()->updateOrCreate(
                 [
@@ -247,10 +342,29 @@ class TranslationController extends Controller
                     'locale_id' => $locale->id,
                 ],
                 [
-                    'status' => $validated['status'],
+                    'status' => $status,
+                    'review_status' => $reviewStatus,
                     'values' => $values,
-                    'source_hash' => $resolver->sourceHash($provider, $model),
+                    'source_hash' => $sourceHash,
+                    'published_values' => $publishedValues,
+                    'published_source_hash' => $publishedSourceHash,
+                    'reviewed_by' => $preserveFeedback
+                        ? $existing?->reviewed_by
+                        : ($reviewStatus === Translation::REVIEW_APPROVED ? $userId : null),
+                    'reviewed_at' => $preserveFeedback
+                        ? $existing?->reviewed_at
+                        : ($reviewStatus === Translation::REVIEW_APPROVED ? now() : null),
+                    'review_feedback' => $preserveFeedback ? $existing?->review_feedback : null,
                 ],
+            );
+            $revisions->record(
+                $translation,
+                match ($workflowAction) {
+                    'submit' => TranslationRevision::SUBMITTED,
+                    'publish' => TranslationRevision::APPROVED,
+                    default => TranslationRevision::SAVED,
+                },
+                $userId,
             );
 
             return [$translation, $existing?->status];
@@ -279,11 +393,24 @@ class TranslationController extends Controller
             );
         }
 
+        if ($reviewWorkflowEnabled && $workflowAction === 'submit') {
+            TranslationSubmittedForReview::dispatch(
+                $provider->type(),
+                $provider->key($model),
+                $locale->code,
+                $userId,
+            );
+        }
+
         return to_route('ronove.admin.translations.edit', [
             'type' => $provider->type(),
             'key' => $provider->key($model),
             'locale' => $locale->code,
-        ])->with('success', trans('ronove::admin.translations.updated'));
+        ])->with('success', trans(match (true) {
+            $reviewWorkflowEnabled && $workflowAction === 'submit' => 'ronove::admin.reviews.submitted',
+            $status === Translation::PUBLISHED => 'ronove::admin.translations.published',
+            default => 'ronove::admin.translations.updated',
+        }));
     }
 
     public function destroy(
@@ -294,6 +421,7 @@ class TranslationController extends Controller
     ) {
         $provider = $this->provider($registry, $type);
         $model = $this->model($provider, $key);
+        abort_unless($locale->is_enabled && $locale->isTranslationTarget(), 404);
         $resource = Resource::query()
             ->where('resource_type', $provider->type())
             ->where('resource_key', $provider->key($model))
@@ -338,7 +466,7 @@ class TranslationController extends Controller
     ) {
         $provider = $this->provider($registry, $type);
         $model = $this->model($provider, $key);
-        abort_unless($locale->is_enabled, 404);
+        abort_unless($locale->is_enabled && $locale->isTranslationTarget(), 404);
         $validated = $request->validate([
             'note' => ['required', 'string', 'not_regex:/^\s*$/u', 'max:5000'],
         ]);
@@ -375,6 +503,7 @@ class TranslationController extends Controller
     ) {
         $provider = $this->provider($registry, $type);
         $model = $this->model($provider, $key);
+        abort_unless($locale->is_enabled && $locale->isTranslationTarget(), 404);
         $resource = Resource::query()
             ->where('resource_type', $provider->type())
             ->where('resource_key', $provider->key($model))
@@ -416,14 +545,26 @@ class TranslationController extends Controller
     /**
      * @return array<string, mixed>
      */
-    private function translationRules(ResourceProvider $provider): array
-    {
+    private function translationRules(
+        ResourceProvider $provider,
+        bool $reviewWorkflowEnabled = false,
+        bool $requireWorkflowAction = false,
+    ): array {
         $rules = [
             'locale' => [
                 'required', 'string',
-                Rule::exists('ronove_locales', 'code')->where('is_enabled', true),
+                Rule::exists('ronove_locales', 'code')->where(fn ($query) => $query
+                    ->where('is_enabled', true)
+                    ->where('code', '!=', Locale::globalCode())),
             ],
-            'status' => ['required', Rule::in([Translation::DRAFT, Translation::PUBLISHED])],
+            'status' => [
+                $reviewWorkflowEnabled ? 'nullable' : 'required',
+                Rule::in([Translation::DRAFT, Translation::PUBLISHED]),
+            ],
+            'workflow_action' => [
+                $reviewWorkflowEnabled && $requireWorkflowAction ? 'required' : 'nullable',
+                Rule::in(['save', 'submit', 'publish']),
+            ],
             'values' => ['nullable', 'array'],
         ];
 
