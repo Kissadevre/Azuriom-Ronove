@@ -32,6 +32,7 @@ class LanguageSwitcher
                 name: $locale->name,
                 nativeName: $locale->native_name,
                 isCurrent: $locale->code === $currentLocale,
+                flagCode: $locale->flag_code,
             ))
             ->prepend($original)
             ->values();

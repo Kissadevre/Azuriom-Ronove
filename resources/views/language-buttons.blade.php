@@ -12,6 +12,7 @@
                     @csrf
                     <input type="hidden" name="locale" value="{{ $ronoveLanguage->code }}">
                     <button type="submit" class="btn w-100 {{ $ronoveLanguage->isCurrent ? 'btn-primary' : 'btn-outline-primary' }}" @if($ronoveLanguage->isCurrent) aria-current="true" @endif>
+                        @include('ronove::_locale-flag', ['flagCode' => $ronoveLanguage->flagCode])
                         {{ $ronoveLanguage->nativeName }}
                         @if($ronoveLanguage->isCurrent)
                             <i class="bi bi-check-lg ms-1" aria-hidden="true"></i>

@@ -20,6 +20,7 @@
             @php($localeTranslation = $resourceRecord?->translations?->firstWhere('locale_id', $locale->id))
             <li class="nav-item" role="presentation">
                 <a class="nav-link @if($selectedLocale?->is($locale)) active @endif" href="{{ route('ronove.admin.translations.edit', ['type' => $provider->type(), 'key' => $provider->key($resourceModel), 'locale' => $locale->code]) }}">
+                    @include('ronove::_locale-flag', ['flagCode' => $locale->flag_code])
                     {{ $locale->native_name }}
                     @if($localeTranslation)
                         @php($localeBadge = $reviewWorkflowEnabled

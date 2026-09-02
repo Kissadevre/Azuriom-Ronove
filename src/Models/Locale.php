@@ -14,7 +14,7 @@ class Locale extends Model
     protected string $prefix = 'ronove_';
 
     protected $fillable = [
-        'code', 'name', 'native_name', 'is_enabled', 'position', 'fallback_locale_id',
+        'code', 'name', 'native_name', 'flag_code', 'is_enabled', 'position', 'fallback_locale_id',
     ];
 
     protected $casts = [

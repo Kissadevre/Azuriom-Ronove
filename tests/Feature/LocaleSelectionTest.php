@@ -2,8 +2,8 @@
 
 namespace Azuriom\Plugin\Ronove\Tests\Feature;
 
-use Azuriom\Models\User;
 use Azuriom\Models\Setting;
+use Azuriom\Models\User;
 use Azuriom\Plugin\Ronove\Events\LocaleChanged;
 use Azuriom\Plugin\Ronove\Models\Locale;
 use Azuriom\Plugin\Ronove\Models\UserPreference;
@@ -159,8 +159,29 @@ class LocaleSelectionTest extends TestCase
             'name' => 'Spanish',
             'native_name' => 'Español',
             'is_current' => true,
+            'flag_code' => null,
         ], $current?->jsonSerialize());
         $this->assertSame(route('ronove.locale.update'), app('ronove')->languageUpdateUrl());
+    }
+
+    public function test_language_flags_are_exposed_to_the_theme_selector(): void
+    {
+        Setting::updateSettings('locale', 'en');
+        Locale::query()->create([
+            'code' => 'es_ES',
+            'name' => 'Spanish',
+            'native_name' => 'Español',
+            'flag_code' => 'MX',
+            'is_enabled' => true,
+            'position' => 0,
+        ]);
+
+        $option = app('ronove')->languageOptions('es_ES')->firstWhere('code', 'es_ES');
+        $html = view('ronove::language-selector')->render();
+
+        $this->assertSame('MX', $option?->flagCode);
+        $this->assertStringContainsString('🇲🇽', $html);
+        $this->assertStringContainsString('Español', $html);
     }
 
     public function test_the_dropdown_can_render_as_an_icon_only_selector(): void

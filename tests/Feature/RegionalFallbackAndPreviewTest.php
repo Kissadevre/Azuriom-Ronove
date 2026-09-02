@@ -161,6 +161,29 @@ class RegionalFallbackAndPreviewTest extends TestCase
         $this->assertNull($spanish->fresh()->fallback_locale_id);
     }
 
+    public function test_an_administrator_can_customize_a_language_flag(): void
+    {
+        Setting::updateSettings('locale', 'en');
+        $admin = $this->user(admin: true);
+        $spanish = $this->locale('es_ES', 'Español');
+
+        $this->actingAs($admin)
+            ->post(route('ronove.admin.languages.update'), [
+                'locales' => ['es_ES'],
+                'flags' => ['es_ES' => 'mx'],
+            ])
+            ->assertRedirect(route('ronove.admin.languages.index'))
+            ->assertSessionHasNoErrors();
+
+        $this->assertSame('MX', $spanish->fresh()->flag_code);
+
+        $this->actingAs($admin)
+            ->get(route('ronove.admin.languages.index'))
+            ->assertOk()
+            ->assertSee('value="MX"', false)
+            ->assertSee('🇲🇽');
+    }
+
     public function test_global_locale_is_source_only_in_language_and_translation_admin(): void
     {
         Setting::updateSettings('locale', 'en');

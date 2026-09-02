@@ -24,12 +24,25 @@
                     if (matches) visible++;
                 });
 
-                selectedCount.textContent = options.filter((option) => option.querySelector('input').checked).length;
+                selectedCount.textContent = options.filter((option) => option.querySelector('input[type="checkbox"]').checked).length;
                 empty.classList.toggle('d-none', visible !== 0);
             };
 
+            const flagEmoji = (code) => /^[a-z]{2}$/i.test(code)
+                ? [...code.toUpperCase()].map((letter) => String.fromCodePoint(127397 + letter.charCodeAt(0))).join('')
+                : '🌐';
+
             search.addEventListener('input', refresh);
-            options.forEach((option) => option.querySelector('input').addEventListener('change', refresh));
+            options.forEach((option) => {
+                option.querySelector('input[type="checkbox"]').addEventListener('change', refresh);
+                const flagInput = option.querySelector('[data-ronove-flag-input]');
+                const preview = option.querySelector('[data-ronove-flag-preview]');
+
+                flagInput.addEventListener('input', () => {
+                    flagInput.value = flagInput.value.replace(/[^a-z]/gi, '').slice(0, 2).toUpperCase();
+                    preview.textContent = flagEmoji(flagInput.value);
+                });
+            });
             refresh();
         })();
     </script>
@@ -54,7 +67,7 @@
 
         <div class="card ronove-admin-card mb-4">
             <div class="card-header ronove-language-card-header">
-                <div><span class="ronove-admin-eyebrow">{{ trans('ronove::admin.languages.step_languages') }}</span><h2 class="h5 mb-1">{{ trans('ronove::admin.languages.available_title') }}</h2><p class="text-body-secondary small mb-0">{{ trans('ronove::admin.languages.available_description') }}</p></div>
+                <div><span class="ronove-admin-eyebrow">{{ trans('ronove::admin.languages.step_languages') }}</span><h2 class="h5 mb-1">{{ trans('ronove::admin.languages.available_title') }}</h2><p class="text-body-secondary small mb-0">{{ trans('ronove::admin.languages.available_description') }} {{ trans('ronove::admin.languages.flag_description') }}</p></div>
                 <div class="ronove-language-search"><i class="bi bi-search" aria-hidden="true"></i><input class="form-control" id="ronoveLocaleSearch" type="search" placeholder="{{ trans('ronove::admin.languages.search') }}" aria-label="{{ trans('ronove::admin.languages.search') }}"></div>
             </div>
             <div class="card-body">
@@ -68,14 +81,20 @@
                         @php($enabled = old('locales') !== null
                             ? in_array($code, old('locales', []), true)
                             : ($configuredLocales->get($normalizedCode)?->is_enabled ?? false))
+                        @php($flagCode = old('flags.'.$normalizedCode, $configuredLocales->get($normalizedCode)?->flag_code ?? \Azuriom\Plugin\Ronove\Support\CountryFlag::defaultForLocale($normalizedCode)))
                         <div class="col-md-6 col-xl-4" data-ronove-locale="{{ mb_strtolower($name.' '.$normalizedCode) }}">
-                            <label class="ronove-locale-option border rounded p-3 d-flex align-items-center gap-3 h-100" for="locale{{ $loop->index }}">
-                                <input class="form-check-input mt-0" id="locale{{ $loop->index }}" type="checkbox" name="locales[]" value="{{ $code }}" @checked($enabled)>
-                                <span class="flex-grow-1">
-                                    <strong class="d-block">{{ $name }}</strong>
-                                </span>
-                                <span class="badge rounded-pill text-bg-light border">{{ $normalizedCode }}</span>
-                            </label>
+                            <div class="ronove-locale-option border rounded p-3 d-flex align-items-center gap-3 h-100">
+                                <label class="d-flex min-w-0 flex-grow-1 align-items-center gap-3" for="locale{{ $loop->index }}">
+                                    <input class="form-check-input mt-0" id="locale{{ $loop->index }}" type="checkbox" name="locales[]" value="{{ $code }}" @checked($enabled)>
+                                    <span class="flex-grow-1"><strong class="d-block">{{ $name }}</strong><small class="text-body-secondary">{{ $normalizedCode }}</small></span>
+                                </label>
+                                <div class="ronove-flag-field">
+                                    <span class="ronove-locale-flag ronove-locale-flag-lg" data-ronove-flag-preview aria-hidden="true">{{ \Azuriom\Plugin\Ronove\Support\CountryFlag::emoji($flagCode) ?? '🌐' }}</span>
+                                    <label class="visually-hidden" for="flag{{ $loop->index }}">{{ trans('ronove::admin.languages.flag_for', ['locale' => $name]) }}</label>
+                                    <input class="form-control form-control-sm text-uppercase @error('flags.'.$normalizedCode) is-invalid @enderror" id="flag{{ $loop->index }}" name="flags[{{ $normalizedCode }}]" value="{{ $flagCode }}" maxlength="2" inputmode="text" autocomplete="off" placeholder="ES" data-ronove-flag-input>
+                                    @error('flags.'.$normalizedCode)<div class="invalid-feedback d-block"><strong>{{ $message }}</strong></div>@enderror
+                                </div>
+                            </div>
                         </div>
                     @endforeach
                 </div>

@@ -29,7 +29,7 @@
                 <span class="ronove-admin-eyebrow">{{ trans('ronove::admin.translations.resource_type') }}</span>
                 <h2 class="h4 mb-0">{{ $provider->label() }}</h2>
             </div>
-            <span class="ronove-coverage-locale"><i class="bi bi-globe2" aria-hidden="true"></i>{{ trans('ronove::admin.translations.coverage_for', ['locale' => $selectedLocale->native_name]) }}</span>
+            <span class="ronove-coverage-locale">@include('ronove::_locale-flag', ['flagCode' => $selectedLocale->flag_code]){{ trans('ronove::admin.translations.coverage_for', ['locale' => $selectedLocale->native_name]) }}</span>
         </div>
         <div class="row g-3 mb-4">
             @foreach([
@@ -59,7 +59,7 @@
                 <label class="form-label" for="coverageLocale">{{ trans('ronove::admin.translations.filters.locale') }}</label>
                 <select class="form-select" id="coverageLocale" name="locale">
                     @foreach($locales as $locale)
-                        <option value="{{ $locale->code }}" @selected($selectedLocale?->is($locale))>{{ $locale->native_name }}</option>
+                        <option value="{{ $locale->code }}" @selected($selectedLocale?->is($locale))>{{ \Azuriom\Plugin\Ronove\Support\CountryFlag::emoji($locale->flag_code) ?? '🌐' }} {{ $locale->native_name }}</option>
                     @endforeach
                 </select>
             </div>
@@ -138,7 +138,7 @@
                                             }
                                             : null)
                                         <span class="badge rounded-pill {{ $isOutdated ? 'text-bg-danger' : ($reviewBadge ?? ($storedTranslation?->isPublished() ? 'text-bg-success' : ($storedTranslation ? 'text-bg-warning' : 'text-bg-secondary'))) }}" title="{{ $isOutdated ? trans('ronove::admin.translations.outdated_badge', ['locale' => $locale->native_name]) : ($reviewWorkflowEnabled && $storedTranslation ? trans('ronove::admin.reviews.status.'.$storedTranslation->review_status) : $locale->native_name) }}">
-                                            {{ $locale->code }}
+                                            @include('ronove::_locale-flag', ['flagCode' => $locale->flag_code, 'localeName' => $locale->native_name])
                                             @if($isOutdated)
                                                 <i class="bi bi-exclamation-triangle ms-1" aria-hidden="true"></i>
                                                 <span class="visually-hidden">{{ trans('ronove::admin.translations.outdated_badge', ['locale' => $locale->native_name]) }}</span>

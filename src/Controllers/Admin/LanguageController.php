@@ -6,6 +6,7 @@ use Azuriom\Http\Controllers\Controller;
 use Azuriom\Http\Controllers\InstallController;
 use Azuriom\Models\ActionLog;
 use Azuriom\Plugin\Ronove\Models\Locale;
+use Azuriom\Plugin\Ronove\Support\CountryFlag;
 use Azuriom\Plugin\Ronove\Support\LocaleCode;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -50,19 +51,29 @@ class LanguageController extends Controller
         $validated = $request->validate([
             'locales' => ['sometimes', 'array'],
             'locales.*' => ['required', 'string', 'distinct', Rule::in($available)],
+            'flags' => ['sometimes', 'array'],
+            'flags.*' => ['nullable', 'string', 'size:2', 'regex:/^[A-Za-z]{2}$/'],
         ]);
         $enabled = array_map(LocaleCode::normalize(...), $validated['locales'] ?? []);
+        $flags = collect($validated['flags'] ?? [])->mapWithKeys(
+            fn ($flag, $code) => [LocaleCode::normalize((string) $code) => CountryFlag::normalize($flag)]
+        );
+        $configured = Locale::query()->get()->keyBy('code');
 
-        DB::transaction(function () use ($allAvailable, $enabled) {
+        DB::transaction(function () use ($allAvailable, $configured, $enabled, $flags) {
             foreach ($allAvailable as $position => $code) {
                 $normalized = LocaleCode::normalize($code);
                 $nativeName = trans('messages.lang', [], $normalized);
+                $existing = $configured->get($normalized);
 
                 Locale::query()->updateOrCreate(
                     ['code' => $normalized],
                     [
                         'name' => $nativeName,
                         'native_name' => $nativeName,
+                        'flag_code' => $flags->has($normalized)
+                            ? $flags->get($normalized)
+                            : ($existing?->flag_code ?? CountryFlag::defaultForLocale($normalized)),
                         'is_enabled' => in_array($normalized, $enabled, true),
                         'position' => $position,
                     ],
