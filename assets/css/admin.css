@@ -171,6 +171,34 @@
 .ronove-workflow-mode.is-active .ronove-workflow-mode-check { display: block; }
 .ronove-settings-note { display: flex; align-items: flex-start; gap: .6rem; padding: .8rem 1rem; border-radius: .7rem; color: var(--bs-info-text-emphasis, var(--bs-info)); background: rgba(var(--bs-info-rgb), .1); font-size: .875rem; }
 
+.ronove-audit-overview-header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.ronove-audit-scan-badge, .ronove-audit-mode-badge { display: inline-flex; flex: 0 0 auto; align-items: center; gap: .4rem; padding: .4rem .65rem; border-radius: 999px; font-size: .76rem; font-weight: 700; white-space: nowrap; }
+.ronove-audit-scan-badge.is-healthy { color: var(--bs-success-text-emphasis, var(--bs-success)); background: rgba(var(--bs-success-rgb), .1); }
+.ronove-audit-scan-badge.has-findings { color: var(--bs-warning-text-emphasis, var(--bs-warning)); background: rgba(var(--bs-warning-rgb), .12); }
+.ronove-audit-metric { display: flex; min-height: 4.25rem; align-items: center; gap: .8rem; padding: .75rem; border: 1px solid var(--bs-border-color-translucent, var(--bs-border-color)); border-radius: .75rem; background: var(--bs-tertiary-bg, var(--bs-body-bg)); }
+.ronove-audit-metric .ronove-admin-stat-label { margin: .15rem 0 0; }
+.ronove-audit-healthy { border-color: rgba(var(--bs-success-rgb), .25); background: linear-gradient(135deg, rgba(var(--bs-success-rgb), .065), transparent 70%), var(--bs-body-bg); }
+.ronove-audit-healthy-body { display: flex; align-items: flex-start; gap: 1.1rem; padding: 1.5rem; }
+.ronove-audit-healthy-icon { display: inline-grid; width: 3.25rem; height: 3.25rem; flex: 0 0 auto; place-items: center; border-radius: .85rem; color: var(--bs-success); background: rgba(var(--bs-success-rgb), .12); font-size: 1.4rem; }
+.ronove-audit-scope { display: flex; flex-wrap: wrap; gap: .5rem; }
+.ronove-audit-scope span { display: inline-flex; align-items: center; gap: .3rem; padding: .35rem .6rem; border: 1px solid rgba(var(--bs-success-rgb), .18); border-radius: 999px; color: var(--bs-success-text-emphasis, var(--bs-success)); background: rgba(var(--bs-success-rgb), .07); font-size: .76rem; font-weight: 650; }
+.ronove-audit-guidance { display: flex; align-items: flex-start; gap: .7rem; padding: .9rem 1rem; border: 1px solid rgba(var(--bs-warning-rgb), .2); border-radius: .75rem; color: var(--bs-warning-text-emphasis, var(--bs-body-color)); background: rgba(var(--bs-warning-rgb), .08); }
+.ronove-audit-guidance > i { margin-top: .1rem; }
+.ronove-audit-guidance strong { display: block; margin-bottom: .15rem; }
+.ronove-audit-guidance p { color: var(--bs-secondary-color, var(--bs-secondary)); font-size: .85rem; }
+.ronove-audit-category-nav { display: flex; overflow-x: auto; gap: .5rem; padding-bottom: .2rem; scrollbar-width: thin; }
+.ronove-audit-category-nav a { display: inline-flex; flex: 0 0 auto; align-items: center; gap: .6rem; padding: .55rem .7rem; border: 1px solid var(--bs-border-color); border-radius: .65rem; color: var(--bs-body-color); background: var(--bs-body-bg); font-size: .8rem; font-weight: 650; text-decoration: none; }
+.ronove-audit-category-nav a:hover { border-color: rgba(var(--bs-primary-rgb), .4); color: var(--bs-primary); }
+.ronove-audit-category-nav strong { display: inline-grid; min-width: 1.45rem; height: 1.45rem; place-items: center; border-radius: 999px; color: var(--bs-primary); background: rgba(var(--bs-primary-rgb), .1); font-size: .7rem; }
+.ronove-audit-category { scroll-margin-top: 1rem; }
+.ronove-audit-category-header, .ronove-audit-category-title, .ronove-audit-category-footer, .ronove-audit-finding { display: flex; align-items: center; gap: .85rem; }
+.ronove-audit-category-header { justify-content: space-between; }
+.ronove-audit-category-title { min-width: 0; align-items: flex-start; }
+.ronove-audit-category-title > div { min-width: 0; }
+.ronove-audit-finding { padding: .9rem 1.15rem; align-items: flex-start; }
+.ronove-audit-record-icon { display: inline-grid; width: 2rem; height: 2rem; flex: 0 0 auto; place-items: center; border-radius: .55rem; color: var(--bs-secondary-color, var(--bs-secondary)); background: var(--bs-tertiary-bg, var(--bs-body-bg)); }
+.ronove-audit-category-footer { min-height: 3.5rem; justify-content: space-between; padding: .65rem 1.15rem; background: var(--bs-tertiary-bg, var(--bs-body-bg)); }
+
 .ronove-glossary-card-header { display: flex; min-height: auto !important; align-items: center; justify-content: space-between; gap: 1rem; }
 .ronove-glossary-form-body { padding: 1.15rem 1.25rem; }
 .ronove-glossary-form-body .form-label { margin-bottom: .35rem; font-size: .875rem; font-weight: 650; }
@@ -198,4 +226,8 @@
     .ronove-language-search { width: 100%; }
     .ronove-language-card-footer .btn { width: 100%; }
     .ronove-workflow-modes { grid-template-columns: 1fr; }
+    .ronove-audit-overview-header, .ronove-audit-category-header, .ronove-audit-category-footer { align-items: stretch; flex-direction: column; }
+    .ronove-audit-scan-badge, .ronove-audit-mode-badge { align-self: flex-start; }
+    .ronove-audit-healthy-body { flex-direction: column; }
+    .ronove-audit-category-footer .btn { width: 100%; }
 }
