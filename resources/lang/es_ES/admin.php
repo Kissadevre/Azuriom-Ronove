@@ -114,6 +114,7 @@ return [
             'outdated' => 'Desactualizadas',
         ],
         'filters' => [
+            'title' => 'Filtrar recursos',
             'locale' => 'Idioma de cobertura',
             'status' => 'Estado de traducción',
             'review_status' => 'Estado de revisión',
@@ -125,6 +126,7 @@ return [
         ],
         'outdated_badge' => 'La traducción :locale está desactualizada',
         'resource_type' => 'Tipo de contenido',
+        'resources_title' => 'Recursos disponibles',
         'resource' => 'Recurso original',
         'coverage' => 'Cobertura de idiomas',
         'empty' => 'No hay recursos disponibles para este tipo de contenido.',

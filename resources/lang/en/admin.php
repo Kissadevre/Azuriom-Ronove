@@ -114,6 +114,7 @@ return [
             'outdated' => 'Outdated',
         ],
         'filters' => [
+            'title' => 'Filter resources',
             'locale' => 'Coverage language',
             'status' => 'Translation status',
             'review_status' => 'Review status',
@@ -125,6 +126,7 @@ return [
         ],
         'outdated_badge' => ':locale translation is outdated',
         'resource_type' => 'Content type',
+        'resources_title' => 'Available resources',
         'resource' => 'Original resource',
         'coverage' => 'Language coverage',
         'empty' => 'No resources are available for this content type.',
