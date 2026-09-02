@@ -3,6 +3,7 @@
 return [
     'title' => 'Ronove',
     'nav' => [
+        'settings' => 'Settings',
         'languages' => 'Languages',
         'translations' => 'Translation center',
         'audit' => 'Audit and cleanup',
@@ -29,10 +30,19 @@ return [
         ],
     ],
     'permissions' => [
-        'settings' => 'Manage Ronove languages',
+        'settings' => 'Manage Ronove settings and languages',
         'translations' => 'Manage Ronove translations',
         'publish' => 'Publish Ronove translations',
+        'review' => 'Review Ronove translations',
         'audit' => 'Audit and clean Ronove data',
+    ],
+    'settings' => [
+        'title' => 'Settings',
+        'description' => 'Configure optional Ronove behavior without changing Azuriom globally.',
+        'review_workflow' => 'Enable the translation review workflow',
+        'review_workflow_help' => 'When enabled, translators save drafts or submit them for review. Only an authorized reviewer can approve and publish a submitted translation. When disabled, the existing direct draft and publish controls remain available.',
+        'revisions_help' => 'Revision history is recorded automatically in both modes and never adds an extra step while saving.',
+        'updated' => 'Ronove settings have been updated.',
     ],
     'languages' => [
         'title' => 'Languages',
@@ -49,7 +59,7 @@ return [
         'fallbacks_updated' => 'The regional fallbacks have been updated.',
     ],
     'logs' => [
-        'settings_updated' => 'Updated Ronove language settings.',
+        'settings_updated' => 'Updated Ronove settings.',
         'translation_saved' => 'Saved a Ronove translation.',
         'translation_deleted' => 'Deleted a Ronove translation.',
         'glossary_saved' => 'Saved a Ronove glossary term.',
@@ -57,6 +67,9 @@ return [
         'note_saved' => 'Saved an internal Ronove translation note.',
         'note_deleted' => 'Deleted an internal Ronove translation note.',
         'audit_cleaned' => 'Cleaned :count Ronove record(s) from the :category audit category.',
+        'review_approved' => 'Approved a Ronove translation review.',
+        'review_changes_requested' => 'Requested changes to a Ronove translation.',
+        'revision_restored' => 'Restored a Ronove translation revision.',
     ],
     'glossary' => [
         'title' => 'Glossary',
@@ -101,8 +114,10 @@ return [
         'filters' => [
             'locale' => 'Coverage language',
             'status' => 'Translation status',
+            'review_status' => 'Review status',
             'search' => 'Search resources',
             'all_statuses' => 'All statuses',
+            'all_review_statuses' => 'All review statuses',
             'apply' => 'Apply filters',
             'clear' => 'Clear',
         ],
@@ -141,6 +156,47 @@ return [
         'note_placeholder' => 'Terminology decisions, tone, references, or other context...',
         'note_saved' => 'The internal note has been saved.',
         'note_deleted' => 'The internal note has been deleted.',
+    ],
+    'reviews' => [
+        'current_status' => 'Review status',
+        'status' => [
+            'draft' => 'Draft',
+            'pending' => 'Pending review',
+            'changes_requested' => 'Changes requested',
+            'approved' => 'Approved',
+        ],
+        'feedback' => 'Reviewer feedback',
+        'feedback_placeholder' => 'Explain the required changes or leave an optional approval note...',
+        'reviewed_by' => 'Reviewed by :user on :date',
+        'save_draft' => 'Save draft',
+        'submit' => 'Submit for review',
+        'submitted' => 'The translation has been submitted for review.',
+        'empty_submission' => 'Add at least one translated value before submitting this translation for review.',
+        'panel_title' => 'Review decision',
+        'panel_description' => 'Approve and publish this submission, or return it to the translator with specific feedback.',
+        'approve' => 'Approve and publish',
+        'request_changes' => 'Request changes',
+        'waiting' => 'This translation is waiting for an authorized reviewer.',
+        'approved' => 'The translation has been approved and published.',
+        'changes_requested' => 'The translation has been returned with requested changes.',
+    ],
+    'revisions' => [
+        'title' => 'Revision history',
+        'description' => 'Automatic snapshots of saved text and review decisions. Restoring a revision always creates a new draft.',
+        'actions' => [
+            'saved' => 'Saved',
+            'submitted' => 'Submitted for review',
+            'approved' => 'Approved',
+            'changes_requested' => 'Changes requested',
+            'restored' => 'Restored',
+        ],
+        'metadata' => ':user · :date',
+        'unknown_user' => 'Deleted or unknown user',
+        'view_values' => 'View saved values',
+        'restore' => 'Restore',
+        'restore_confirm' => 'Restore revision #:revision as a new draft?',
+        'restored_from' => 'Restored from revision #:revision.',
+        'restored' => 'The selected revision has been restored as a new draft.',
     ],
     'audit' => [
         'title' => 'Audit and cleanup',
@@ -198,6 +254,10 @@ return [
             'invalid_translation_statuses' => [
                 'title' => 'Invalid translation statuses',
                 'description' => 'Translations use a status other than draft or published. Cleanup safely changes those records to draft.',
+            ],
+            'invalid_review_statuses' => [
+                'title' => 'Invalid review statuses',
+                'description' => 'Translations use an unknown review state. Cleanup restores published translations to approved and other translations to draft.',
             ],
             'outdated_translations' => [
                 'title' => 'Outdated translations',

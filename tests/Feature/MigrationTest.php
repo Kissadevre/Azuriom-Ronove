@@ -19,13 +19,19 @@ class MigrationTest extends TestCase
             'resource_type', 'resource_key',
         ]));
         $this->assertTrue(Schema::hasColumns('ronove_translations', [
-            'resource_id', 'locale_id', 'status', 'values', 'source_hash',
+            'resource_id', 'locale_id', 'status', 'review_status', 'values', 'source_hash',
+            'published_values', 'published_source_hash', 'reviewed_by', 'reviewed_at',
+            'review_feedback',
         ]));
         $this->assertTrue(Schema::hasColumns('ronove_glossary_terms', [
             'scope', 'locale_id', 'source_text', 'source_key', 'translated_text', 'context',
         ]));
         $this->assertTrue(Schema::hasColumns('ronove_translation_notes', [
             'resource_id', 'locale_id', 'note',
+        ]));
+        $this->assertTrue(Schema::hasColumns('ronove_translation_revisions', [
+            'translation_id', 'user_id', 'action', 'status', 'review_status',
+            'values', 'source_hash', 'feedback',
         ]));
     }
 }

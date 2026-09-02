@@ -7,6 +7,7 @@ use Azuriom\Plugin\Ronove\Models\Locale;
 use Azuriom\Plugin\Ronove\Models\Resource;
 use Azuriom\Plugin\Ronove\Services\LanguageSwitcher;
 use Azuriom\Plugin\Ronove\Services\ResourceRegistry;
+use Azuriom\Plugin\Ronove\Services\ReviewWorkflow;
 use Azuriom\Plugin\Ronove\Services\TranslationCoverage;
 use Azuriom\Plugin\Ronove\Services\TranslationResolver;
 use Azuriom\Plugin\Ronove\Support\LocaleOption;
@@ -23,6 +24,7 @@ class RonoveManager
         private readonly TranslationResolver $translations,
         private readonly LanguageSwitcher $languageSwitcher,
         private readonly TranslationCoverage $translationCoverage,
+        private readonly ReviewWorkflow $reviewWorkflow,
     ) {}
 
     public function registerIntegration(
@@ -69,6 +71,11 @@ class RonoveManager
     public function languageUpdateUrl(): string
     {
         return $this->languageSwitcher->updateUrl();
+    }
+
+    public function reviewWorkflowEnabled(): bool
+    {
+        return $this->reviewWorkflow->enabled();
     }
 
     public function translate(string $type, Model $resource, string $field, ?string $locale = null): ?string

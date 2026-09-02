@@ -16,6 +16,8 @@ final readonly class TranslationAuditIssue
 
     public const INVALID_TRANSLATION_STATUSES = 'invalid_translation_statuses';
 
+    public const INVALID_REVIEW_STATUSES = 'invalid_review_statuses';
+
     public const OUTDATED_TRANSLATIONS = 'outdated_translations';
 
     public const BLANK_NOTES = 'blank_notes';
@@ -33,6 +35,7 @@ final readonly class TranslationAuditIssue
         self::EMPTY_TRANSLATIONS,
         self::INVALID_TRANSLATION_VALUES,
         self::INVALID_TRANSLATION_STATUSES,
+        self::INVALID_REVIEW_STATUSES,
         self::OUTDATED_TRANSLATIONS,
         self::BLANK_NOTES,
         self::UNKNOWN_GLOSSARY_SCOPES,
@@ -47,6 +50,7 @@ final readonly class TranslationAuditIssue
         self::EMPTY_TRANSLATIONS,
         self::INVALID_TRANSLATION_VALUES,
         self::INVALID_TRANSLATION_STATUSES,
+        self::INVALID_REVIEW_STATUSES,
         self::BLANK_NOTES,
         self::UNKNOWN_GLOSSARY_SCOPES,
         self::DISABLED_LOCALE_PREFERENCES,

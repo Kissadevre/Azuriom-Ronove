@@ -111,6 +111,14 @@ Every translation editor includes a field-by-field comparison between the origin
 
 The **Update preview** action accepts the current unsaved form values, renders rich text and Markdown with their corresponding presentation, and applies the public fallback chain without writing to the database, changing publication status, adding action logs, or dispatching translation events.
 
+## Review workflow and revision history
+
+The review workflow is optional and disabled by default from Ronove's Settings page. With it disabled, authorized administrators keep the direct draft and publish controls, which is appropriate when the same person translates and publishes content. With it enabled, translators can save a draft or submit it for review; submitted text remains private until a user with both `ronove.review` and `ronove.publish` approves and publishes it. When an approved translation is edited, visitors continue seeing its last approved version throughout the new review. Reviewers may instead request changes with required feedback.
+
+The integration page exposes a review-status filter while the workflow is enabled, allowing reviewers to find pending or returned translations by language and content type. Integrating plugins can inspect the current mode through `app('ronove')->reviewWorkflowEnabled()`. The workflow also adds `TranslationSubmittedForReview` and `TranslationReviewCompleted` events.
+
+Revision history is independent from the optional workflow and is always recorded automatically. Every save, submission, review decision, and restoration creates an immutable snapshot with its actor, publication state, review state, source hash, values, and optional feedback. Restoring a snapshot never silently republishes old text: it creates a new draft, keeps any currently approved version public, and adds another revision to the history.
+
 ## Glossary and internal notes
 
 The translation center links to a human-maintained glossary. Terms are stored for one target locale and can be global or scoped to a registered integration. An integration-specific term is therefore available to all of that integration's resource providers without leaking into unrelated plugins.
@@ -130,8 +138,10 @@ Cleanup is always explicit and limited to one category. Ronove recalculates that
 Plugins may listen to the following public events:
 
 - `TranslationSaved`: dispatched after every successful translation save with `resourceType`, `resourceKey`, `locale`, `status`, `values`, and `previousStatus`.
-- `TranslationPublished`: dispatched only when a translation enters the `published` status. Re-saving an already published translation does not emit it again.
+- `TranslationPublished`: dispatched when direct editing first enters the `published` status and whenever the review workflow approves a new public version. Re-saving an already published translation in direct mode does not emit it again.
 - `TranslationDeleted`: dispatched after an existing translation is deleted with its previous status.
+- `TranslationSubmittedForReview`: dispatched when a translation enters the pending review state, with `resourceType`, `resourceKey`, `locale`, and `userId`.
+- `TranslationReviewCompleted`: dispatched after approval or a change request, with `resourceType`, `resourceKey`, `locale`, `decision`, `feedback`, and `reviewerId`.
 - `LocaleChanged`: dispatched after a visitor's preference is persisted, with the selected locale and the authenticated user ID when available.
 
 The event payloads contain stable scalar values and arrays instead of mutable Eloquent models. A listener can therefore decide whether an event belongs to its registered resource type without depending on Ronove's internal storage models:
@@ -213,7 +223,7 @@ An integrating plugin should include the following manifest dependency so it can
 ```json
 {
     "dependencies": {
-        "ronove": ">=0.10.0"
+        "ronove": ">=0.11.0"
     }
 }
 ```

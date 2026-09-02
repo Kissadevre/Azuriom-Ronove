@@ -2,7 +2,7 @@
     "id": "ronove",
     "name": "Ronove",
     "description": "Provide visitor-specific locales and translatable content for Azuriom and its plugins.",
-    "version": "0.10.0",
+    "version": "0.11.0",
     "url": "https://github.com/Kissadevre/Azuriom-Ronove",
     "authors": [
         "Kissadere",

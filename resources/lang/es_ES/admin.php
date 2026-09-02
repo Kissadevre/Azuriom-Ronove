@@ -3,6 +3,7 @@
 return [
     'title' => 'Ronove',
     'nav' => [
+        'settings' => 'Ajustes',
         'languages' => 'Idiomas',
         'translations' => 'Centro de traducciones',
         'audit' => 'Auditoría y limpieza',
@@ -29,10 +30,19 @@ return [
         ],
     ],
     'permissions' => [
-        'settings' => 'Administrar los idiomas de Ronove',
+        'settings' => 'Administrar los ajustes e idiomas de Ronove',
         'translations' => 'Administrar las traducciones de Ronove',
         'publish' => 'Publicar las traducciones de Ronove',
+        'review' => 'Revisar las traducciones de Ronove',
         'audit' => 'Auditar y limpiar datos de Ronove',
+    ],
+    'settings' => [
+        'title' => 'Ajustes',
+        'description' => 'Configura comportamientos opcionales de Ronove sin cambiar Azuriom globalmente.',
+        'review_workflow' => 'Activar el flujo de revisión de traducciones',
+        'review_workflow_help' => 'Cuando está activado, los traductores guardan borradores o los envían a revisión. Solo un revisor autorizado puede aprobar y publicar una traducción enviada. Al desactivarlo, permanecen disponibles los controles actuales para guardar directamente como borrador o publicada.',
+        'revisions_help' => 'El historial de revisiones se registra automáticamente en ambos modos y nunca añade un paso adicional al guardar.',
+        'updated' => 'Los ajustes de Ronove han sido actualizados.',
     ],
     'languages' => [
         'title' => 'Idiomas',
@@ -49,7 +59,7 @@ return [
         'fallbacks_updated' => 'Los respaldos regionales han sido actualizados.',
     ],
     'logs' => [
-        'settings_updated' => 'Actualizó la configuración de idiomas de Ronove.',
+        'settings_updated' => 'Actualizó los ajustes de Ronove.',
         'translation_saved' => 'Guardó una traducción de Ronove.',
         'translation_deleted' => 'Eliminó una traducción de Ronove.',
         'glossary_saved' => 'Guardó un término del glosario de Ronove.',
@@ -57,6 +67,9 @@ return [
         'note_saved' => 'Guardó una nota interna de traducción de Ronove.',
         'note_deleted' => 'Eliminó una nota interna de traducción de Ronove.',
         'audit_cleaned' => 'Limpió :count registro(s) de Ronove de la categoría de auditoría :category.',
+        'review_approved' => 'Aprobó una revisión de traducción de Ronove.',
+        'review_changes_requested' => 'Solicitó cambios en una traducción de Ronove.',
+        'revision_restored' => 'Restauró una revisión de traducción de Ronove.',
     ],
     'glossary' => [
         'title' => 'Glosario',
@@ -101,8 +114,10 @@ return [
         'filters' => [
             'locale' => 'Idioma de cobertura',
             'status' => 'Estado de traducción',
+            'review_status' => 'Estado de revisión',
             'search' => 'Buscar recursos',
             'all_statuses' => 'Todos los estados',
+            'all_review_statuses' => 'Todos los estados de revisión',
             'apply' => 'Aplicar filtros',
             'clear' => 'Limpiar',
         ],
@@ -141,6 +156,47 @@ return [
         'note_placeholder' => 'Decisiones terminológicas, tono, referencias u otro contexto...',
         'note_saved' => 'La nota interna ha sido guardada.',
         'note_deleted' => 'La nota interna ha sido eliminada.',
+    ],
+    'reviews' => [
+        'current_status' => 'Estado de revisión',
+        'status' => [
+            'draft' => 'Borrador',
+            'pending' => 'Pendiente de revisión',
+            'changes_requested' => 'Cambios solicitados',
+            'approved' => 'Aprobada',
+        ],
+        'feedback' => 'Comentarios del revisor',
+        'feedback_placeholder' => 'Explica los cambios necesarios o deja una nota de aprobación opcional...',
+        'reviewed_by' => 'Revisada por :user el :date',
+        'save_draft' => 'Guardar borrador',
+        'submit' => 'Enviar a revisión',
+        'submitted' => 'La traducción ha sido enviada a revisión.',
+        'empty_submission' => 'Agrega al menos un valor traducido antes de enviar esta traducción a revisión.',
+        'panel_title' => 'Decisión de revisión',
+        'panel_description' => 'Aprueba y publica este envío, o devuélvelo al traductor con comentarios específicos.',
+        'approve' => 'Aprobar y publicar',
+        'request_changes' => 'Solicitar cambios',
+        'waiting' => 'Esta traducción está esperando a un revisor autorizado.',
+        'approved' => 'La traducción ha sido aprobada y publicada.',
+        'changes_requested' => 'La traducción ha sido devuelta con cambios solicitados.',
+    ],
+    'revisions' => [
+        'title' => 'Historial de revisiones',
+        'description' => 'Instantáneas automáticas del texto guardado y de las decisiones de revisión. Restaurar una revisión siempre crea un nuevo borrador.',
+        'actions' => [
+            'saved' => 'Guardada',
+            'submitted' => 'Enviada a revisión',
+            'approved' => 'Aprobada',
+            'changes_requested' => 'Cambios solicitados',
+            'restored' => 'Restaurada',
+        ],
+        'metadata' => ':user · :date',
+        'unknown_user' => 'Usuario eliminado o desconocido',
+        'view_values' => 'Ver valores guardados',
+        'restore' => 'Restaurar',
+        'restore_confirm' => '¿Restaurar la revisión #:revision como un nuevo borrador?',
+        'restored_from' => 'Restaurada desde la revisión #:revision.',
+        'restored' => 'La revisión seleccionada ha sido restaurada como un nuevo borrador.',
     ],
     'audit' => [
         'title' => 'Auditoría y limpieza',
@@ -198,6 +254,10 @@ return [
             'invalid_translation_statuses' => [
                 'title' => 'Estados de traducción inválidos',
                 'description' => 'Las traducciones utilizan un estado distinto de borrador o publicada. La limpieza cambia esos registros de forma segura a borrador.',
+            ],
+            'invalid_review_statuses' => [
+                'title' => 'Estados de revisión inválidos',
+                'description' => 'Las traducciones utilizan un estado de revisión desconocido. La limpieza restablece las traducciones publicadas como aprobadas y las demás como borrador.',
             ],
             'outdated_translations' => [
                 'title' => 'Traducciones desactualizadas',

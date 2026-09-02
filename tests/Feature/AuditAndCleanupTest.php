@@ -143,6 +143,7 @@ class AuditAndCleanupTest extends TestCase
             $resolver->sourceHash($provider, $statusPost),
             'archived',
         );
+        $statusTranslation->update(['review_status' => 'legacy-review']);
         $blankNote = TranslationNote::query()->create([
             'resource_id' => $statusTranslation->resource_id,
             'locale_id' => $locale->id,
@@ -158,6 +159,7 @@ class AuditAndCleanupTest extends TestCase
             ->assertSee('Empty translations')
             ->assertSee('Invalid translation fields')
             ->assertSee('Invalid translation statuses')
+            ->assertSee('Invalid review statuses')
             ->assertSee('Blank internal notes');
 
         $this->actingAs($admin)
@@ -191,6 +193,9 @@ class AuditAndCleanupTest extends TestCase
 
         $this->cleanup($admin, TranslationAuditIssue::INVALID_TRANSLATION_STATUSES);
         $this->assertSame(Translation::DRAFT, $statusTranslation->fresh()->status);
+
+        $this->cleanup($admin, TranslationAuditIssue::INVALID_REVIEW_STATUSES);
+        $this->assertSame(Translation::REVIEW_DRAFT, $statusTranslation->fresh()->review_status);
 
         $this->cleanup($admin, TranslationAuditIssue::BLANK_NOTES);
         $this->assertDatabaseMissing('ronove_translation_notes', ['id' => $blankNote->id]);

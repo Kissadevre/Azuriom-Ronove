@@ -19,9 +19,11 @@ use Azuriom\Plugin\Ronove\Services\LanguageSwitcher;
 use Azuriom\Plugin\Ronove\Services\LocaleManager;
 use Azuriom\Plugin\Ronove\Services\LocalizedSettings;
 use Azuriom\Plugin\Ronove\Services\ResourceRegistry;
+use Azuriom\Plugin\Ronove\Services\ReviewWorkflow;
 use Azuriom\Plugin\Ronove\Services\TranslationAudit;
 use Azuriom\Plugin\Ronove\Services\TranslationCoverage;
 use Azuriom\Plugin\Ronove\Services\TranslationResolver;
+use Azuriom\Plugin\Ronove\Services\TranslationRevisionRecorder;
 use Azuriom\Plugin\Ronove\View\Composers\PageTranslationComposer;
 use Azuriom\Plugin\Ronove\View\Composers\PostTranslationComposer;
 use Illuminate\Session\Middleware\StartSession;
@@ -38,6 +40,8 @@ class RonoveServiceProvider extends BasePluginServiceProvider
         $this->app->singleton(TranslationResolver::class);
         $this->app->singleton(TranslationCoverage::class);
         $this->app->singleton(TranslationAudit::class);
+        $this->app->singleton(ReviewWorkflow::class);
+        $this->app->singleton(TranslationRevisionRecorder::class);
         $this->app->singleton(RonoveManager::class);
         $this->app->alias(RonoveManager::class, 'ronove');
     }
@@ -58,6 +62,7 @@ class RonoveServiceProvider extends BasePluginServiceProvider
             'ronove.settings' => 'ronove::admin.permissions.settings',
             'ronove.translations' => 'ronove::admin.permissions.translations',
             'ronove.publish' => 'ronove::admin.permissions.publish',
+            'ronove.review' => 'ronove::admin.permissions.review',
             'ronove.audit' => 'ronove::admin.permissions.audit',
         ]);
 
@@ -101,6 +106,21 @@ class RonoveServiceProvider extends BasePluginServiceProvider
                 'icon' => 'shield-check',
                 'color' => 'warning',
                 'message' => 'ronove::admin.logs.audit_cleaned',
+            ],
+            'ronove.reviews.approved' => [
+                'icon' => 'check-circle',
+                'color' => 'success',
+                'message' => 'ronove::admin.logs.review_approved',
+            ],
+            'ronove.reviews.changes_requested' => [
+                'icon' => 'arrow-counterclockwise',
+                'color' => 'warning',
+                'message' => 'ronove::admin.logs.review_changes_requested',
+            ],
+            'ronove.revisions.restored' => [
+                'icon' => 'clock-history',
+                'color' => 'warning',
+                'message' => 'ronove::admin.logs.revision_restored',
             ],
         ]);
     }
@@ -153,6 +173,10 @@ class RonoveServiceProvider extends BasePluginServiceProvider
                 'permission' => ['ronove.settings', 'ronove.translations', 'ronove.audit'],
                 'route' => 'ronove.admin.*',
                 'items' => [
+                    'ronove.admin.settings.index' => [
+                        'name' => trans('ronove::admin.nav.settings'),
+                        'permission' => 'ronove.settings',
+                    ],
                     'ronove.admin.languages.index' => [
                         'name' => trans('ronove::admin.nav.languages'),
                         'permission' => 'ronove.settings',

@@ -66,7 +66,7 @@
                 </select>
             </div>
             @if($filterable)
-                <div class="col-md-4 col-xl-3">
+                <div class="col-md-4 col-xl-{{ $reviewWorkflowEnabled ? '2' : '3' }}">
                     <label class="form-label" for="translationStatus">{{ trans('ronove::admin.translations.filters.status') }}</label>
                     <select class="form-select" id="translationStatus" name="status">
                         <option value="">{{ trans('ronove::admin.translations.filters.all_statuses') }}</option>
@@ -75,7 +75,18 @@
                         @endforeach
                     </select>
                 </div>
-                <div class="col-md-4 col-xl-4">
+                @if($reviewWorkflowEnabled)
+                    <div class="col-md-4 col-xl-2">
+                        <label class="form-label" for="reviewStatus">{{ trans('ronove::admin.translations.filters.review_status') }}</label>
+                        <select class="form-select" id="reviewStatus" name="review_status">
+                            <option value="">{{ trans('ronove::admin.translations.filters.all_review_statuses') }}</option>
+                            @foreach(\Azuriom\Plugin\Ronove\Models\Translation::REVIEW_STATUSES as $filterReviewStatus)
+                                <option value="{{ $filterReviewStatus }}" @selected($reviewStatusFilter === $filterReviewStatus)>{{ trans('ronove::admin.reviews.status.'.$filterReviewStatus) }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                @endif
+                <div class="col-md-4 col-xl-{{ $reviewWorkflowEnabled ? '3' : '4' }}">
                     <label class="form-label" for="resourceSearch">{{ trans('ronove::admin.translations.filters.search') }}</label>
                     <input class="form-control" id="resourceSearch" name="search" value="{{ $searchFilter }}" maxlength="100">
                 </div>
@@ -111,7 +122,15 @@
                                     @foreach($locales as $locale)
                                         @php($storedTranslation = $storedResource?->translations?->firstWhere('locale_id', $locale->id))
                                         @php($isOutdated = $selectedLocale?->is($locale) && $coverage?->isOutdated($resourceKey))
-                                        <span class="badge {{ $isOutdated ? 'text-bg-danger' : ($storedTranslation?->isPublished() ? 'text-bg-success' : ($storedTranslation ? 'text-bg-warning' : 'text-bg-secondary')) }}" @if($isOutdated) title="{{ trans('ronove::admin.translations.outdated_badge', ['locale' => $locale->native_name]) }}" @endif>
+                                        @php($reviewBadge = $reviewWorkflowEnabled && $storedTranslation
+                                            ? match ($storedTranslation->review_status) {
+                                                'pending' => 'text-bg-info',
+                                                'changes_requested' => 'text-bg-danger',
+                                                'approved' => 'text-bg-success',
+                                                default => 'text-bg-warning',
+                                            }
+                                            : null)
+                                        <span class="badge {{ $isOutdated ? 'text-bg-danger' : ($reviewBadge ?? ($storedTranslation?->isPublished() ? 'text-bg-success' : ($storedTranslation ? 'text-bg-warning' : 'text-bg-secondary'))) }}" @if($isOutdated) title="{{ trans('ronove::admin.translations.outdated_badge', ['locale' => $locale->native_name]) }}" @elseif($reviewWorkflowEnabled && $storedTranslation) title="{{ trans('ronove::admin.reviews.status.'.$storedTranslation->review_status) }}" @endif>
                                             {{ $locale->code }}
                                             @if($isOutdated)
                                                 <i class="bi bi-exclamation-triangle ms-1" aria-hidden="true"></i>

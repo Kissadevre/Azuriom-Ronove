@@ -25,8 +25,18 @@
                 <a class="nav-link @if($selectedLocale?->is($locale)) active @endif" href="{{ route('ronove.admin.translations.edit', ['type' => $provider->type(), 'key' => $provider->key($resourceModel), 'locale' => $locale->code]) }}">
                     {{ $locale->native_name }}
                     @if($localeTranslation)
-                        <span class="badge rounded-pill {{ $localeTranslation->isPublished() ? 'text-bg-success' : 'text-bg-warning' }} ms-1">
-                            {{ trans('ronove::admin.translations.status.'.$localeTranslation->status) }}
+                        @php($localeBadge = $reviewWorkflowEnabled
+                            ? match ($localeTranslation->review_status) {
+                                'pending' => 'text-bg-info',
+                                'changes_requested' => 'text-bg-danger',
+                                'approved' => 'text-bg-success',
+                                default => 'text-bg-warning',
+                            }
+                            : ($localeTranslation->isPublished() ? 'text-bg-success' : 'text-bg-warning'))
+                        <span class="badge rounded-pill {{ $localeBadge }} ms-1">
+                            {{ trans($reviewWorkflowEnabled
+                                ? 'ronove::admin.reviews.status.'.$localeTranslation->review_status
+                                : 'ronove::admin.translations.status.'.$localeTranslation->status) }}
                         </span>
                     @endif
                 </a>
@@ -51,6 +61,34 @@
             </div>
         </div>
     @elseif($selectedLocale)
+        @if($reviewWorkflowEnabled && $translation)
+            @php($reviewColor = match ($translation->review_status) {
+                'pending' => 'info',
+                'changes_requested' => 'danger',
+                'approved' => 'success',
+                default => 'warning',
+            })
+            <div class="alert alert-{{ $reviewColor }}">
+                <div class="d-flex flex-wrap align-items-center gap-2">
+                    <strong>{{ trans('ronove::admin.reviews.current_status') }}:</strong>
+                    <span class="badge text-bg-{{ $reviewColor }}">{{ trans('ronove::admin.reviews.status.'.$translation->review_status) }}</span>
+                </div>
+                @if($translation->review_feedback)
+                    <hr>
+                    <p class="mb-1 fw-semibold">{{ trans('ronove::admin.reviews.feedback') }}</p>
+                    <p class="mb-0" style="white-space: pre-wrap">{{ $translation->review_feedback }}</p>
+                    @if($translation->reviewer || $translation->reviewed_at)
+                        <small class="d-block mt-2">
+                            {{ trans('ronove::admin.reviews.reviewed_by', [
+                                'user' => $translation->reviewer?->name ?? trans('ronove::admin.revisions.unknown_user'),
+                                'date' => $translation->reviewed_at?->format('Y-m-d H:i') ?? '—',
+                            ]) }}
+                        </small>
+                    @endif
+                @endif
+            </div>
+        @endif
+
         <div class="card mb-4">
             <div class="card-header d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-2">
                 <div>
@@ -99,6 +137,10 @@
                     {{ trans('ronove::admin.translations.source_changed') }}
                 </div>
             @endif
+
+            @error('values')
+                <div class="alert alert-danger" role="alert"><strong>{{ $message }}</strong></div>
+            @enderror
 
             @if($previewGenerated)
                 <div class="alert alert-info">
@@ -169,15 +211,24 @@
             </div>
 
             <div class="d-flex flex-wrap gap-2 align-items-center">
-                <select class="form-select w-auto" name="status" aria-label="{{ trans('ronove::admin.translations.status_label') }}">
-                    <option value="draft" @selected(old('status', $formStatus) === 'draft')>{{ trans('ronove::admin.translations.status.draft') }}</option>
-                    @if($canPublish)
-                        <option value="published" @selected(old('status', $formStatus) === 'published')>{{ trans('ronove::admin.translations.status.published') }}</option>
-                    @endif
-                </select>
-                <button class="btn btn-primary" type="submit">
-                    <i class="bi bi-save me-1" aria-hidden="true"></i> {{ trans('messages.actions.save') }}
-                </button>
+                @if($reviewWorkflowEnabled)
+                    <button class="btn btn-primary" type="submit" name="workflow_action" value="save">
+                        <i class="bi bi-save me-1" aria-hidden="true"></i> {{ trans('ronove::admin.reviews.save_draft') }}
+                    </button>
+                    <button class="btn btn-success" type="submit" name="workflow_action" value="submit">
+                        <i class="bi bi-send me-1" aria-hidden="true"></i> {{ trans('ronove::admin.reviews.submit') }}
+                    </button>
+                @else
+                    <select class="form-select w-auto" name="status" aria-label="{{ trans('ronove::admin.translations.status_label') }}">
+                        <option value="draft" @selected(old('status', $formStatus) === 'draft')>{{ trans('ronove::admin.translations.status.draft') }}</option>
+                        @if($canPublish)
+                            <option value="published" @selected(old('status', $formStatus) === 'published')>{{ trans('ronove::admin.translations.status.published') }}</option>
+                        @endif
+                    </select>
+                    <button class="btn btn-primary" type="submit">
+                        <i class="bi bi-save me-1" aria-hidden="true"></i> {{ trans('messages.actions.save') }}
+                    </button>
+                @endif
                 <button class="btn btn-outline-primary" type="submit" formaction="{{ route('ronove.admin.translations.preview', ['type' => $provider->type(), 'key' => $provider->key($resourceModel)]) }}">
                     <i class="bi bi-eye me-1" aria-hidden="true"></i> {{ trans('ronove::admin.translations.preview_action') }}
                 </button>
@@ -195,6 +246,96 @@
                 @csrf
                 @method('DELETE')
             </form>
+        @endif
+
+        @if($reviewWorkflowEnabled && $translation?->review_status === \Azuriom\Plugin\Ronove\Models\Translation::REVIEW_PENDING)
+            <div class="card mt-4 border-info">
+                <div class="card-header">
+                    <h2 class="h5 mb-1">{{ trans('ronove::admin.reviews.panel_title') }}</h2>
+                    <p class="text-body-secondary small mb-0">{{ trans('ronove::admin.reviews.panel_description') }}</p>
+                </div>
+                <div class="card-body">
+                    @if($canReview)
+                        <form action="{{ route('ronove.admin.translations.reviews.changes', ['type' => $provider->type(), 'key' => $provider->key($resourceModel), 'locale' => $selectedLocale]) }}" method="POST">
+                            @csrf
+                            <label class="form-label" for="reviewFeedback">{{ trans('ronove::admin.reviews.feedback') }}</label>
+                            <textarea class="form-control @error('feedback') is-invalid @enderror" id="reviewFeedback" name="feedback" rows="4" maxlength="5000" placeholder="{{ trans('ronove::admin.reviews.feedback_placeholder') }}">{{ old('feedback') }}</textarea>
+                            @error('feedback')
+                                <span class="invalid-feedback"><strong>{{ $message }}</strong></span>
+                            @enderror
+                            <div class="d-flex flex-wrap gap-2 mt-3">
+                                @if($canPublish)
+                                    <button class="btn btn-success" type="submit" formaction="{{ route('ronove.admin.translations.reviews.approve', ['type' => $provider->type(), 'key' => $provider->key($resourceModel), 'locale' => $selectedLocale]) }}">
+                                        <i class="bi bi-check-lg me-1" aria-hidden="true"></i>{{ trans('ronove::admin.reviews.approve') }}
+                                    </button>
+                                @endif
+                                <button class="btn btn-outline-danger" type="submit">
+                                    <i class="bi bi-arrow-counterclockwise me-1" aria-hidden="true"></i>{{ trans('ronove::admin.reviews.request_changes') }}
+                                </button>
+                            </div>
+                        </form>
+                    @else
+                        <div class="alert alert-info mb-0">{{ trans('ronove::admin.reviews.waiting') }}</div>
+                    @endif
+                </div>
+            </div>
+        @endif
+
+        @if($translation && $revisions->isNotEmpty())
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h2 class="h5 mb-1">{{ trans('ronove::admin.revisions.title') }}</h2>
+                    <p class="text-body-secondary small mb-0">{{ trans('ronove::admin.revisions.description') }}</p>
+                </div>
+                <div class="list-group list-group-flush">
+                    @foreach($revisions as $revision)
+                        <div class="list-group-item py-3">
+                            <div class="d-flex flex-column flex-lg-row justify-content-between gap-3">
+                                <div class="flex-grow-1">
+                                    <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+                                        <strong>#{{ $revision->id }} · {{ trans('ronove::admin.revisions.actions.'.$revision->action) }}</strong>
+                                        <span class="badge text-bg-secondary">{{ trans('ronove::admin.translations.status.'.$revision->status) }}</span>
+                                        <span class="badge text-bg-light border">{{ trans('ronove::admin.reviews.status.'.$revision->review_status) }}</span>
+                                    </div>
+                                    <small class="text-body-secondary">
+                                        {{ trans('ronove::admin.revisions.metadata', [
+                                            'user' => $revision->user?->name ?? trans('ronove::admin.revisions.unknown_user'),
+                                            'date' => $revision->created_at->format('Y-m-d H:i'),
+                                        ]) }}
+                                    </small>
+                                    @if($revision->action === \Azuriom\Plugin\Ronove\Models\TranslationRevision::RESTORED && str_starts_with($revision->feedback ?? '', 'revision:'))
+                                        <p class="mt-2 mb-0 text-body-secondary">
+                                            {{ trans('ronove::admin.revisions.restored_from', ['revision' => substr($revision->feedback, strlen('revision:'))]) }}
+                                        </p>
+                                    @elseif($revision->feedback)
+                                        <p class="mt-2 mb-0" style="white-space: pre-wrap">{{ $revision->feedback }}</p>
+                                    @endif
+                                </div>
+                                <form action="{{ route('ronove.admin.translations.revisions.restore', ['type' => $provider->type(), 'key' => $provider->key($resourceModel), 'locale' => $selectedLocale, 'revision' => $revision]) }}" method="POST" onsubmit="return confirm(@js(trans('ronove::admin.revisions.restore_confirm', ['revision' => $revision->id])))">
+                                    @csrf
+                                    <button class="btn btn-sm btn-outline-primary text-nowrap" type="submit">
+                                        <i class="bi bi-arrow-counterclockwise me-1" aria-hidden="true"></i>{{ trans('ronove::admin.revisions.restore') }}
+                                    </button>
+                                </form>
+                            </div>
+                            <details class="mt-3">
+                                <summary class="text-primary">{{ trans('ronove::admin.revisions.view_values') }}</summary>
+                                <div class="row g-3 mt-1">
+                                    @foreach($provider->fields() as $field => $definition)
+                                        <div class="col-12">
+                                            <div class="small fw-semibold text-body-secondary mb-1">{{ $definition->label }}</div>
+                                            @include('ronove::admin.translations._preview-value', ['value' => $revision->values[$field] ?? null])
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </details>
+                        </div>
+                    @endforeach
+                </div>
+                @if($revisions->hasPages())
+                    <div class="card-footer">{{ $revisions->links() }}</div>
+                @endif
+            </div>
         @endif
 
         <div class="card mt-4">

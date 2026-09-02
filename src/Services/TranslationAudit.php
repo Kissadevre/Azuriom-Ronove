@@ -56,6 +56,7 @@ class TranslationAudit
                 TranslationAuditIssue::EMPTY_TRANSLATIONS => $this->deleteTranslations($issues, $deletedTranslations),
                 TranslationAuditIssue::INVALID_TRANSLATION_VALUES => $this->sanitizeTranslations($issues, $deletedTranslations),
                 TranslationAuditIssue::INVALID_TRANSLATION_STATUSES => $this->normalizeTranslationStatuses($issues),
+                TranslationAuditIssue::INVALID_REVIEW_STATUSES => $this->normalizeReviewStatuses($issues),
                 TranslationAuditIssue::BLANK_NOTES => $this->deleteBlankNotes($issues),
                 TranslationAuditIssue::UNKNOWN_GLOSSARY_SCOPES => $this->deleteUnknownGlossaryTerms($issues),
                 TranslationAuditIssue::DISABLED_LOCALE_PREFERENCES => $this->deleteDisabledPreferences($issues),
@@ -175,6 +176,17 @@ class TranslationAudit
                 $reference,
                 $locale,
                 $translation->status,
+            ));
+        }
+
+        if (! in_array($translation->review_status, Translation::REVIEW_STATUSES, true)) {
+            $issues->push(new TranslationAuditIssue(
+                TranslationAuditIssue::INVALID_REVIEW_STATUSES,
+                'translation',
+                $translation->id,
+                $reference,
+                $locale,
+                $translation->review_status,
             ));
         }
 
@@ -482,7 +494,36 @@ class TranslationAudit
             ->whereKey($issues->pluck('recordId'))
             ->whereNotIn('status', [Translation::DRAFT, Translation::PUBLISHED])
             ->lockForUpdate()
-            ->update(['status' => Translation::DRAFT]);
+            ->update([
+                'status' => Translation::DRAFT,
+                'published_values' => null,
+                'published_source_hash' => null,
+            ]);
+    }
+
+    /**
+     * @param  Collection<int, TranslationAuditIssue>  $issues
+     */
+    private function normalizeReviewStatuses(Collection $issues): int
+    {
+        $translations = Translation::query()
+            ->whereKey($issues->pluck('recordId'))
+            ->whereNotIn('review_status', Translation::REVIEW_STATUSES)
+            ->lockForUpdate()
+            ->get();
+
+        foreach ($translations as $translation) {
+            $translation->update([
+                'review_status' => $translation->isPublished()
+                    ? Translation::REVIEW_APPROVED
+                    : Translation::REVIEW_DRAFT,
+                'reviewed_by' => null,
+                'reviewed_at' => null,
+                'review_feedback' => null,
+            ]);
+        }
+
+        return $translations->count();
     }
 
     /**
