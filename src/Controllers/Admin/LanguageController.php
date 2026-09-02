@@ -16,6 +16,7 @@ class LanguageController extends Controller
 {
     public function index()
     {
+        $globalLocale = Locale::globalCode();
         $configuredLocales = Locale::query()
             ->with('fallback')
             ->orderBy('position')
@@ -23,25 +24,37 @@ class LanguageController extends Controller
             ->get()
             ->keyBy('code');
 
+        $availableLocales = InstallController::getAvailableLocales()
+            ->reject(fn (string $name, string $code) => LocaleCode::normalize($code) === $globalLocale);
+
         return view('ronove::admin.languages', [
-            'availableLocales' => InstallController::getAvailableLocales(),
+            'availableLocales' => $availableLocales,
             'configuredLocales' => $configuredLocales,
-            'enabledLocales' => $configuredLocales->filter(fn (Locale $locale) => $locale->is_enabled),
-            'globalLocale' => LocaleCode::normalize(setting('locale', config('app.locale'))),
+            'enabledLocales' => $configuredLocales->filter(
+                fn (Locale $locale) => $locale->is_enabled && $locale->isTranslationTarget()
+            ),
+            'globalLocale' => $globalLocale,
+            'globalLocaleName' => InstallController::getAvailableLocales()->get($globalLocale, $globalLocale),
         ]);
     }
 
     public function update(Request $request)
     {
-        $available = InstallController::getAvailableLocaleCodes()->all();
+        $allAvailable = InstallController::getAvailableLocaleCodes()->all();
+        $globalLocale = Locale::globalCode();
+        $available = collect($allAvailable)
+            ->map(LocaleCode::normalize(...))
+            ->reject(fn (string $code) => $code === $globalLocale)
+            ->values()
+            ->all();
         $validated = $request->validate([
-            'locales' => ['required', 'array', 'min:1'],
+            'locales' => ['sometimes', 'array'],
             'locales.*' => ['required', 'string', 'distinct', Rule::in($available)],
         ]);
-        $enabled = array_map(LocaleCode::normalize(...), $validated['locales']);
+        $enabled = array_map(LocaleCode::normalize(...), $validated['locales'] ?? []);
 
-        DB::transaction(function () use ($available, $enabled) {
-            foreach ($available as $position => $code) {
+        DB::transaction(function () use ($allAvailable, $enabled) {
+            foreach ($allAvailable as $position => $code) {
                 $normalized = LocaleCode::normalize($code);
                 $nativeName = trans('messages.lang', [], $normalized);
 
@@ -75,6 +88,7 @@ class LanguageController extends Controller
     {
         $enabledLocales = Locale::query()
             ->where('is_enabled', true)
+            ->translationTargets()
             ->orderBy('position')
             ->orderBy('id')
             ->get();

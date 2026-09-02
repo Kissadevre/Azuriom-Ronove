@@ -185,6 +185,10 @@ class TranslationResolver
     private function publishedValue(Collection $translations, string $field, array $localeChain): array
     {
         foreach ($localeChain as $locale) {
+            if ($locale === $this->locales->globalLocale()) {
+                continue;
+            }
+
             $translation = $translations->first(
                 fn (Translation $translation) => $translation->locale?->code === $locale
             );

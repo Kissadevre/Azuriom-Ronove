@@ -3,6 +3,7 @@
 namespace Azuriom\Plugin\Ronove\Tests\Feature;
 
 use Azuriom\Models\User;
+use Azuriom\Models\Setting;
 use Azuriom\Plugin\Ronove\Models\Locale;
 use Azuriom\Plugin\Ronove\Models\Resource;
 use Azuriom\Plugin\Ronove\Models\Translation;
@@ -69,7 +70,7 @@ class PostTranslationTest extends TestCase
             ]));
     }
 
-    public function test_published_post_fields_use_selected_global_and_original_fallbacks(): void
+    public function test_published_post_fields_use_selected_and_original_fallbacks(): void
     {
         [$post, $english, $spanish, $resource] = $this->fixtures();
 
@@ -89,7 +90,7 @@ class PostTranslationTest extends TestCase
         $values = app(TranslationResolver::class)->values('core.post', $post, 'es_ES');
 
         $this->assertSame('Título traducido', $values['title']);
-        $this->assertSame('<p>Global content</p>', $values['content']);
+        $this->assertSame('<p>Original content</p>', $values['content']);
         $this->assertSame('Original SEO description', $post->description);
         $this->assertSame('original-slug', $post->slug);
     }
@@ -134,6 +135,41 @@ class PostTranslationTest extends TestCase
         $this->assertSame('Original SEO description', $post->fresh()->description);
     }
 
+    public function test_the_global_locale_cannot_be_opened_or_saved_as_a_translation_target(): void
+    {
+        [$post, $english, $spanish] = $this->fixtures();
+        $admin = User::query()->create([
+            'name' => 'Translation Admin',
+            'email' => fake()->unique()->safeEmail(),
+            'password' => 'password',
+            'role_id' => 1,
+        ]);
+        $admin->role->forceFill(['is_admin' => true])->save();
+        $route = [
+            'type' => 'core.post',
+            'key' => $post->id,
+        ];
+
+        $this->actingAs($admin)
+            ->get(route('ronove.admin.translations.edit', $route + ['locale' => $english->code]))
+            ->assertNotFound();
+
+        $this->actingAs($admin)
+            ->get(route('ronove.admin.translations.edit', $route + ['locale' => $spanish->code]))
+            ->assertOk();
+
+        $this->actingAs($admin)
+            ->from(route('ronove.admin.translations.edit', $route + ['locale' => $spanish->code]))
+            ->put(route('ronove.admin.translations.update', $route), [
+                'locale' => $english->code,
+                'status' => Translation::DRAFT,
+                'values' => ['title' => 'Must not be saved'],
+            ])
+            ->assertSessionHasErrors('locale');
+
+        $this->assertDatabaseMissing('ronove_translations', ['locale_id' => $english->id]);
+    }
+
     public function test_deleting_a_post_removes_its_ronove_translations(): void
     {
         [$post, , $spanish, $resource] = $this->fixtures();
@@ -164,6 +200,8 @@ class PostTranslationTest extends TestCase
 
     private function fixtures(): array
     {
+        Setting::updateSettings('locale', 'en');
+
         $user = User::query()->create([
             'name' => 'Author',
             'email' => fake()->unique()->safeEmail(),

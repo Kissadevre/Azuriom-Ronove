@@ -44,7 +44,7 @@
     ])
 
     <div class="row g-3 mb-4">
-        <div class="col-md-4"><div class="ronove-admin-stat"><div><span class="ronove-admin-stat-label">{{ trans('ronove::admin.languages.global_label') }}</span><strong class="ronove-admin-stat-value fs-5">{{ $availableLocales->get($globalLocale, $globalLocale) }}</strong></div><span class="ronove-admin-stat-icon text-primary bg-primary bg-opacity-10"><i class="bi bi-translate"></i></span></div></div>
+        <div class="col-md-4"><div class="ronove-admin-stat"><div><span class="ronove-admin-stat-label">{{ trans('ronove::admin.languages.global_label') }}</span><strong class="ronove-admin-stat-value fs-5">{{ $globalLocaleName }}</strong></div><span class="ronove-admin-stat-icon text-primary bg-primary bg-opacity-10"><i class="bi bi-file-earmark-text"></i></span></div></div>
         <div class="col-md-4"><div class="ronove-admin-stat"><div><span class="ronove-admin-stat-label">{{ trans('ronove::admin.languages.selected') }}</span><strong class="ronove-admin-stat-value" id="ronoveSelectedLocaleCount">{{ $enabledLocales->count() }}</strong></div><span class="ronove-admin-stat-icon text-success bg-success bg-opacity-10"><i class="bi bi-check2-circle"></i></span></div></div>
         <div class="col-md-4"><div class="ronove-admin-stat"><div><span class="ronove-admin-stat-label">{{ trans('ronove::admin.languages.available') }}</span><strong class="ronove-admin-stat-value">{{ $availableLocales->count() }}</strong></div><span class="ronove-admin-stat-icon text-info bg-info bg-opacity-10"><i class="bi bi-globe-americas"></i></span></div></div>
     </div>
@@ -67,7 +67,7 @@
                         @php($normalizedCode = \Azuriom\Plugin\Ronove\Support\LocaleCode::normalize($code))
                         @php($enabled = old('locales') !== null
                             ? in_array($code, old('locales', []), true)
-                            : ($configuredLocales->get($normalizedCode)?->is_enabled ?? $normalizedCode === $globalLocale))
+                            : ($configuredLocales->get($normalizedCode)?->is_enabled ?? false))
                         <div class="col-md-6 col-xl-4" data-ronove-locale="{{ mb_strtolower($name.' '.$normalizedCode) }}">
                             <label class="ronove-locale-option border rounded p-3 d-flex align-items-center gap-3 h-100" for="locale{{ $loop->index }}">
                                 <input class="form-check-input mt-0" id="locale{{ $loop->index }}" type="checkbox" name="locales[]" value="{{ $code }}" @checked($enabled)>

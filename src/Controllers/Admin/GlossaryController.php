@@ -22,6 +22,7 @@ class GlossaryController extends Controller
         $scopes = $this->accessibleScopes($registry);
         $locales = Locale::query()
             ->where('is_enabled', true)
+            ->translationTargets()
             ->orderBy('position')
             ->orderBy('id')
             ->get();
@@ -29,7 +30,9 @@ class GlossaryController extends Controller
             'scope' => ['nullable', 'string', Rule::in($scopes->keys())],
             'locale' => [
                 'nullable', 'string',
-                Rule::exists('ronove_locales', 'code')->where('is_enabled', true),
+                Rule::exists('ronove_locales', 'code')->where(fn ($query) => $query
+                    ->where('is_enabled', true)
+                    ->where('code', '!=', Locale::globalCode())),
             ],
             'search' => ['nullable', 'string', 'max:100'],
         ]);
@@ -138,7 +141,9 @@ class GlossaryController extends Controller
             'scope' => ['required', 'string', 'max:80', Rule::in($this->accessibleScopes($registry)->keys())],
             'locale' => [
                 'required', 'string',
-                Rule::exists('ronove_locales', 'code')->where('is_enabled', true),
+                Rule::exists('ronove_locales', 'code')->where(fn ($query) => $query
+                    ->where('is_enabled', true)
+                    ->where('code', '!=', Locale::globalCode())),
             ],
             'source_text' => ['required', 'string', 'not_regex:/^\s*$/u', 'max:100'],
             'translated_text' => ['required', 'string', 'not_regex:/^\s*$/u', 'max:191'],

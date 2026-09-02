@@ -106,6 +106,7 @@ class RonoveManager
         $localeModel = Locale::query()
             ->where('code', $locale)
             ->where('is_enabled', true)
+            ->translationTargets()
             ->first();
 
         if ($localeModel === null) {

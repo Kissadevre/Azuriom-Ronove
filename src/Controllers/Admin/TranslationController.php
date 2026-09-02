@@ -73,13 +73,15 @@ class TranslationController extends Controller
         $validated = $request->validate([
             'locale' => [
                 'nullable', 'string',
-                Rule::exists('ronove_locales', 'code')->where('is_enabled', true),
+                Rule::exists('ronove_locales', 'code')->where(fn ($query) => $query
+                    ->where('is_enabled', true)
+                    ->where('code', '!=', Locale::globalCode())),
             ],
             'status' => ['nullable', 'string', Rule::in(TranslationCoverageReport::FILTERS)],
             'review_status' => ['nullable', 'string', Rule::in(Translation::REVIEW_STATUSES)],
             'search' => ['nullable', 'string', 'max:100'],
         ]);
-        $locales = Locale::query()->where('is_enabled', true)->orderBy('position')->get();
+        $locales = Locale::query()->where('is_enabled', true)->translationTargets()->orderBy('position')->get();
         $selectedLocale = isset($validated['locale'])
             ? $locales->firstWhere('code', $validated['locale'])
             : $locales->first();
@@ -192,7 +194,7 @@ class TranslationController extends Controller
         ?string $formStatus = null,
         bool $previewGenerated = false,
     ) {
-        $locales = Locale::query()->where('is_enabled', true)->orderBy('position')->get();
+        $locales = Locale::query()->where('is_enabled', true)->translationTargets()->orderBy('position')->get();
         $selectedCode = $request->string('locale')->toString();
         $showOriginal = $selectedCode === '' || $selectedCode === 'original';
         $selectedLocale = $showOriginal ? null : $locales->firstWhere('code', $selectedCode);
@@ -271,6 +273,7 @@ class TranslationController extends Controller
         }
 
         $locale = Locale::query()->where('code', $validated['locale'])->firstOrFail();
+        abort_unless($locale->is_enabled && $locale->isTranslationTarget(), 404);
         $values = $this->validatedValues($provider, $validated);
         $userId = $request->user() === null
             ? null
@@ -403,6 +406,7 @@ class TranslationController extends Controller
     ) {
         $provider = $this->provider($registry, $type);
         $model = $this->model($provider, $key);
+        abort_unless($locale->is_enabled && $locale->isTranslationTarget(), 404);
         $resource = Resource::query()
             ->where('resource_type', $provider->type())
             ->where('resource_key', $provider->key($model))
@@ -447,7 +451,7 @@ class TranslationController extends Controller
     ) {
         $provider = $this->provider($registry, $type);
         $model = $this->model($provider, $key);
-        abort_unless($locale->is_enabled, 404);
+        abort_unless($locale->is_enabled && $locale->isTranslationTarget(), 404);
         $validated = $request->validate([
             'note' => ['required', 'string', 'not_regex:/^\s*$/u', 'max:5000'],
         ]);
@@ -484,6 +488,7 @@ class TranslationController extends Controller
     ) {
         $provider = $this->provider($registry, $type);
         $model = $this->model($provider, $key);
+        abort_unless($locale->is_enabled && $locale->isTranslationTarget(), 404);
         $resource = Resource::query()
             ->where('resource_type', $provider->type())
             ->where('resource_key', $provider->key($model))
@@ -533,7 +538,9 @@ class TranslationController extends Controller
         $rules = [
             'locale' => [
                 'required', 'string',
-                Rule::exists('ronove_locales', 'code')->where('is_enabled', true),
+                Rule::exists('ronove_locales', 'code')->where(fn ($query) => $query
+                    ->where('is_enabled', true)
+                    ->where('code', '!=', Locale::globalCode())),
             ],
             'status' => [
                 $reviewWorkflowEnabled ? 'nullable' : 'required',

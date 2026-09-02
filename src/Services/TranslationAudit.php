@@ -235,7 +235,8 @@ class TranslationAudit
     {
         UserPreference::query()
             ->with('locale')
-            ->whereHas('locale', fn ($query) => $query->where('is_enabled', false))
+            ->whereHas('locale', fn ($query) => $query->where('is_enabled', false)
+                ->orWhere('code', Locale::globalCode()))
             ->orderBy('id')
             ->chunkById(100, function (Collection $preferences) use ($issues) {
                 foreach ($preferences as $preference) {
@@ -285,7 +286,7 @@ class TranslationAudit
      */
     private function invalidFallbackReason(Locale $locale, Collection $locales): ?string
     {
-        if (! $locale->is_enabled) {
+        if (! $locale->is_enabled || ! $locale->isTranslationTarget()) {
             return 'disabled_source';
         }
 
@@ -300,7 +301,7 @@ class TranslationAudit
             $visited[$current->id] = true;
             $fallback = $locales->get($current->fallback_locale_id);
 
-            if (! $fallback instanceof Locale || ! $fallback->is_enabled) {
+            if (! $fallback instanceof Locale || ! $fallback->is_enabled || ! $fallback->isTranslationTarget()) {
                 return 'disabled_target';
             }
 
@@ -571,7 +572,8 @@ class TranslationAudit
             ->whereKey($issues->pluck('recordId'))
             ->lockForUpdate()
             ->get()
-            ->filter(fn (UserPreference $preference) => $preference->locale?->is_enabled === false);
+            ->filter(fn (UserPreference $preference) => $preference->locale?->is_enabled === false
+                || $preference->locale?->isTranslationTarget() === false);
 
         UserPreference::query()->whereKey($preferences->pluck('id'))->delete();
 

@@ -27,7 +27,9 @@ class LanguageController extends Controller
             'locale' => [
                 'required',
                 'string',
-                Rule::exists('ronove_locales', 'code')->where('is_enabled', true),
+                Rule::exists('ronove_locales', 'code')->where(fn ($query) => $query
+                    ->where('is_enabled', true)
+                    ->where('code', '!=', Locale::globalCode())),
             ],
         ]);
 

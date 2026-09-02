@@ -27,7 +27,7 @@ class RevisionController extends Controller
         Locale $locale,
         TranslationRevision $revision,
     ) {
-        abort_unless($locale->is_enabled && $registry->has($type), 404);
+        abort_unless($locale->is_enabled && $locale->isTranslationTarget() && $registry->has($type), 404);
         $provider = $registry->get($type);
         $integration = $registry->integrationFor($type);
 

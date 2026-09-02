@@ -43,7 +43,7 @@ class RegionalFallbackAndPreviewTest extends TestCase
         ], $resolver->values('core.post', $regionalPost, 'es_MX'));
         $this->assertSame([
             'title' => 'Original global',
-            'content' => '<p>Global fallback content</p>',
+            'content' => '<p>Original content</p>',
         ], $resolver->values('core.post', $globalPost, 'es_MX'));
     }
 
@@ -73,15 +73,14 @@ class RegionalFallbackAndPreviewTest extends TestCase
         $this->actingAs($admin)
             ->post(route('ronove.admin.languages.fallbacks.update'), [
                 'fallbacks' => [
-                    'en' => null,
-                    'es_ES' => 'en',
+                    'es_ES' => null,
                     'es_MX' => 'es_ES',
                 ],
             ])
             ->assertRedirect(route('ronove.admin.languages.index'))
             ->assertSessionHasNoErrors();
 
-        $this->assertSame($english->id, $spanish->fresh()->fallback_locale_id);
+        $this->assertNull($spanish->fresh()->fallback_locale_id);
         $this->assertSame($spanish->id, $mexican->fresh()->fallback_locale_id);
 
         $this->actingAs($admin)
@@ -94,7 +93,6 @@ class RegionalFallbackAndPreviewTest extends TestCase
             ->from(route('ronove.admin.languages.index'))
             ->post(route('ronove.admin.languages.fallbacks.update'), [
                 'fallbacks' => [
-                    'en' => null,
                     'es_ES' => 'es_MX',
                     'es_MX' => 'es_ES',
                 ],
@@ -102,7 +100,7 @@ class RegionalFallbackAndPreviewTest extends TestCase
             ->assertRedirect(route('ronove.admin.languages.index'))
             ->assertSessionHasErrors('fallbacks.es_ES');
 
-        $this->assertSame($english->id, $spanish->fresh()->fallback_locale_id);
+        $this->assertNull($spanish->fresh()->fallback_locale_id);
         $this->assertSame($spanish->id, $mexican->fresh()->fallback_locale_id);
     }
 
@@ -161,6 +159,33 @@ class RegionalFallbackAndPreviewTest extends TestCase
         $this->assertFalse($english->fresh()->is_enabled);
         $this->assertTrue($spanish->fresh()->is_enabled);
         $this->assertNull($spanish->fresh()->fallback_locale_id);
+    }
+
+    public function test_global_locale_is_source_only_in_language_and_translation_admin(): void
+    {
+        Setting::updateSettings('locale', 'en');
+        $admin = $this->user(admin: true);
+        $english = $this->locale('en', 'English');
+        $spanish = $this->locale('es_ES', 'Español');
+
+        $this->actingAs($admin)
+            ->get(route('ronove.admin.languages.index'))
+            ->assertOk()
+            ->assertSee('Original content language')
+            ->assertDontSee('value="en"', false)
+            ->assertSee('value="es_ES"', false);
+
+        $this->actingAs($admin)
+            ->post(route('ronove.admin.languages.update'), ['locales' => ['en']])
+            ->assertSessionHasErrors('locales.0');
+
+        $this->actingAs($admin)
+            ->post(route('ronove.admin.languages.update'), [])
+            ->assertRedirect(route('ronove.admin.languages.index'))
+            ->assertSessionHasNoErrors();
+
+        $this->assertFalse($english->fresh()->is_enabled);
+        $this->assertFalse($spanish->fresh()->is_enabled);
     }
 
     private function locale(string $code, string $name, ?Locale $fallback = null): Locale

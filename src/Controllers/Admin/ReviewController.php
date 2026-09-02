@@ -155,7 +155,7 @@ class ReviewController extends Controller
         string $key,
         Locale $locale,
     ): array {
-        abort_unless($locale->is_enabled && $registry->has($type), 404);
+        abort_unless($locale->is_enabled && $locale->isTranslationTarget() && $registry->has($type), 404);
         $provider = $registry->get($type);
         $this->authorizeIntegration($registry->integrationFor($type));
 

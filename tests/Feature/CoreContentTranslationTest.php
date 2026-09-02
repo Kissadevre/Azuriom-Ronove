@@ -145,6 +145,8 @@ class CoreContentTranslationTest extends TestCase
 
     private function spanishLocale(): Locale
     {
+        Setting::updateSettings('locale', 'en');
+
         Locale::query()->create([
             'code' => 'en',
             'name' => 'English',
