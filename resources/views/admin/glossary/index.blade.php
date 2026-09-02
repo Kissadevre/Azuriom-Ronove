@@ -12,8 +12,12 @@
     @include('ronove::admin._header', ['title' => trans('ronove::admin.glossary.title'), 'description' => trans('ronove::admin.glossary.description'), 'icon' => 'bi-journal-text'])
 
     <form class="ronove-admin-toolbar mb-4" action="{{ route('ronove.admin.glossary.index') }}" method="GET">
+        <div class="ronove-admin-toolbar-title">
+            <i class="bi bi-funnel" aria-hidden="true"></i>
+            {{ trans('ronove::admin.translations.filters.apply') }}
+        </div>
         <div class="row g-3 align-items-end">
-            <div class="col-md-4">
+            <div class="col-md-6 col-lg-4">
                 <label class="form-label" for="glossaryScope">{{ trans('ronove::admin.glossary.scope') }}</label>
                 <select class="form-select" id="glossaryScope" name="scope">
                     @foreach($scopes as $scope => $label)
@@ -21,7 +25,7 @@
                     @endforeach
                 </select>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-6 col-lg-2">
                 <label class="form-label" for="glossaryLocale">{{ trans('ronove::admin.glossary.locale') }}</label>
                 <select class="form-select" id="glossaryLocale" name="locale">
                     @foreach($locales as $locale)
@@ -29,11 +33,11 @@
                     @endforeach
                 </select>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-8 col-lg-3">
                 <label class="form-label" for="glossarySearch">{{ trans('ronove::admin.glossary.search') }}</label>
                 <input class="form-control" id="glossarySearch" name="search" value="{{ $search }}" maxlength="100">
             </div>
-            <div class="col-md-2 d-flex gap-2">
+            <div class="col-md-4 col-lg-3 ronove-admin-filter-actions">
                 <button class="btn btn-primary" type="submit">{{ trans('ronove::admin.translations.filters.apply') }}</button>
                 <a class="btn btn-outline-secondary" href="{{ route('ronove.admin.glossary.index') }}">{{ trans('ronove::admin.translations.filters.clear') }}</a>
             </div>
@@ -44,11 +48,15 @@
         <div class="alert alert-info">{{ trans('ronove::admin.glossary.no_languages') }}</div>
     @else
         <div class="card ronove-admin-card mb-4">
-            <div class="card-header">
-                <h2 class="h5 mb-0">{{ trans('ronove::admin.glossary.add') }}</h2>
+            <div class="card-header ronove-glossary-card-header">
+                <div class="d-flex align-items-center gap-3">
+                    <span class="ronove-setting-icon text-primary bg-primary bg-opacity-10" aria-hidden="true"><i class="bi bi-plus-lg"></i></span>
+                    <h2 class="h5 mb-0">{{ trans('ronove::admin.glossary.add') }}</h2>
+                </div>
+                <span class="badge rounded-pill text-bg-light border">{{ $selectedLocale->native_name }}</span>
             </div>
-            <div class="card-body">
-                <form action="{{ route('ronove.admin.glossary.store') }}" method="POST">
+            <form action="{{ route('ronove.admin.glossary.store') }}" method="POST">
+                <div class="card-body ronove-glossary-form-body">
                     @csrf
                     <input type="hidden" name="scope" value="{{ $selectedScope }}">
                     <input type="hidden" name="locale" value="{{ $selectedLocale->code }}">
@@ -82,16 +90,21 @@
                             <div class="form-text">{{ trans('ronove::admin.glossary.context_help') }}</div>
                         </div>
                     </div>
-                    <button class="btn btn-primary mt-3" type="submit">
+                </div>
+                <div class="card-footer ronove-glossary-card-footer">
+                    <button class="btn btn-primary" type="submit">
                         <i class="bi bi-plus-lg me-1" aria-hidden="true"></i> {{ trans('ronove::admin.glossary.add_action') }}
                     </button>
-                </form>
-            </div>
+                </div>
+            </form>
         </div>
 
-        <div class="d-flex align-items-center justify-content-between gap-3 mb-3">
-            <h2 class="h4 mb-0">{{ trans('ronove::admin.glossary.terms') }}</h2>
-            <span class="badge text-bg-secondary">{{ $terms->total() }}</span>
+        <div class="ronove-glossary-list-header">
+            <div>
+                <span class="ronove-admin-eyebrow">{{ trans('ronove::admin.glossary.title') }}</span>
+                <h2 class="h4 mb-0">{{ trans('ronove::admin.glossary.terms') }}</h2>
+            </div>
+            <span class="ronove-glossary-count">{{ $terms->total() }}</span>
         </div>
 
         @forelse($terms as $term)
@@ -101,7 +114,7 @@
                 @method('PUT')
                 <input type="hidden" name="scope" value="{{ $selectedScope }}">
                 <input type="hidden" name="locale" value="{{ $selectedLocale->code }}">
-                <div class="card-body">
+                <div class="card-body ronove-glossary-form-body">
                     <div class="row g-3">
                         <div class="col-md-6">
                             <label class="form-label" for="glossarySource{{ $term->id }}">{{ trans('ronove::admin.glossary.source_text') }}</label>
@@ -131,14 +144,14 @@
                             @endif
                         </div>
                     </div>
-                    <div class="d-flex flex-wrap gap-2 mt-3">
-                        <button class="btn btn-primary" type="submit">
-                            <i class="bi bi-save me-1" aria-hidden="true"></i> {{ trans('messages.actions.save') }}
-                        </button>
-                        <button class="btn btn-outline-danger" type="submit" form="deleteGlossaryTerm{{ $term->id }}">
-                            <i class="bi bi-trash me-1" aria-hidden="true"></i> {{ trans('messages.actions.delete') }}
-                        </button>
-                    </div>
+                </div>
+                <div class="card-footer ronove-glossary-term-actions">
+                    <button class="btn btn-primary" type="submit">
+                        <i class="bi bi-save me-1" aria-hidden="true"></i> {{ trans('messages.actions.save') }}
+                    </button>
+                    <button class="btn btn-outline-danger" type="submit" form="deleteGlossaryTerm{{ $term->id }}">
+                        <i class="bi bi-trash me-1" aria-hidden="true"></i> {{ trans('messages.actions.delete') }}
+                    </button>
                 </div>
             </form>
             <form id="deleteGlossaryTerm{{ $term->id }}" action="{{ route('ronove.admin.glossary.destroy', $term) }}" method="POST" class="d-none">
@@ -146,7 +159,12 @@
                 @method('DELETE')
             </form>
         @empty
-            <div class="alert alert-info">{{ trans('ronove::admin.glossary.empty') }}</div>
+            <div class="card ronove-admin-card">
+                <div class="ronove-admin-empty">
+                    <span class="ronove-admin-empty-icon" aria-hidden="true"><i class="bi bi-journal-x"></i></span>
+                    <strong>{{ trans('ronove::admin.glossary.empty') }}</strong>
+                </div>
+            </div>
         @endforelse
 
         <div class="mt-3">{{ $terms->links() }}</div>

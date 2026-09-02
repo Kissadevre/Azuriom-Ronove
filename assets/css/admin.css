@@ -78,7 +78,9 @@
     background: rgba(var(--bs-primary-rgb), .025);
 }
 .ronove-admin-toolbar .form-label { margin-bottom: .35rem; font-size: .82rem; font-weight: 650; }
+.ronove-admin-toolbar-title { display: flex; align-items: center; gap: .45rem; margin-bottom: .75rem; color: var(--bs-secondary-color, var(--bs-secondary)); font-size: .72rem; font-weight: 750; letter-spacing: .045em; text-transform: uppercase; }
 .ronove-admin-filter-actions { display: flex; justify-content: flex-end; gap: .5rem; }
+.ronove-admin-filter-actions .btn { min-width: 6.5rem; white-space: nowrap; }
 
 .ronove-admin-table thead th {
     padding-block: .8rem;
@@ -123,6 +125,15 @@
 .ronove-setting-row .form-check { flex: 0 0 auto; margin: .1rem 0 0; }
 .ronove-sticky-actions { position: sticky; bottom: 1rem; z-index: 5; display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .85rem 1rem; border: 1px solid var(--bs-border-color); border-radius: .8rem; background: var(--bs-body-bg); box-shadow: 0 .4rem 1.2rem rgba(20, 30, 55, .12); }
 
+.ronove-glossary-card-header { display: flex; min-height: auto !important; align-items: center; justify-content: space-between; gap: 1rem; }
+.ronove-glossary-form-body { padding: 1.15rem 1.25rem; }
+.ronove-glossary-form-body .form-label { margin-bottom: .35rem; font-size: .875rem; font-weight: 650; }
+.ronove-glossary-form-body textarea { min-height: 4.5rem; resize: vertical; }
+.ronove-glossary-card-footer { display: flex; justify-content: flex-end; padding: .8rem 1.25rem; background: var(--bs-tertiary-bg, var(--bs-body-bg)); }
+.ronove-glossary-term-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: .5rem; padding: .75rem 1.25rem; background: var(--bs-tertiary-bg, var(--bs-body-bg)); }
+.ronove-glossary-list-header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin: 2rem 0 .85rem; }
+.ronove-glossary-count { display: inline-grid; min-width: 2rem; height: 2rem; padding-inline: .55rem; place-items: center; border: 1px solid rgba(var(--bs-primary-rgb), .16); border-radius: 999px; color: var(--bs-primary); background: rgba(var(--bs-primary-rgb), .08); font-size: .8rem; font-weight: 750; }
+
 @media (prefers-reduced-motion: reduce) { .ronove-locale-option, .ronove-integration-card { transition: none; } }
 @media (max-width: 767.98px) {
     .ronove-admin-header { flex-direction: column; }
@@ -132,4 +143,6 @@
     .ronove-admin-filter-actions { justify-content: stretch; }
     .ronove-admin-filter-actions .btn { flex: 1 1 0; }
     .ronove-sticky-actions { bottom: .5rem; }
+    .ronove-glossary-card-header { align-items: flex-start; }
+    .ronove-glossary-card-footer .btn { width: 100%; }
 }
