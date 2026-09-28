@@ -15,6 +15,7 @@ use Azuriom\Plugin\Ronove\Models\TranslationRevision;
 use Azuriom\Plugin\Ronove\Services\LocaleManager;
 use Azuriom\Plugin\Ronove\Services\PublicLanguagePage;
 use Azuriom\Plugin\Ronove\Services\ReviewWorkflow;
+use Azuriom\Plugin\Ronove\Services\RonoveSettings;
 use Azuriom\Plugin\Ronove\Tests\TestCase;
 use Illuminate\Support\Facades\Event;
 
@@ -26,6 +27,7 @@ class ReviewWorkflowTest extends TestCase
         $workflow = app(ReviewWorkflow::class);
 
         $this->assertFalse($workflow->enabled());
+        $this->assertFalse(app(RonoveSettings::class)->debugEnabled());
         $this->assertFalse(app('ronove')->reviewWorkflowEnabled());
 
         $this->actingAs($admin)
@@ -33,12 +35,14 @@ class ReviewWorkflowTest extends TestCase
             ->assertOk()
             ->assertSee('Enable the translation review workflow')
             ->assertSee('Public language page')
+            ->assertSee('Debug mode')
             ->assertSee('Revision history is recorded automatically');
 
         $this->actingAs($admin)
             ->post(route('ronove.admin.settings.update'), [
                 'review_workflow_enabled' => '1',
                 'public_language_page_enabled' => '1',
+                'debug_enabled' => '0',
             ])
             ->assertRedirect(route('ronove.admin.settings.index'))
             ->assertSessionHasNoErrors();
@@ -52,6 +56,7 @@ class ReviewWorkflowTest extends TestCase
             ->post(route('ronove.admin.settings.update'), [
                 'review_workflow_enabled' => '0',
                 'public_language_page_enabled' => '0',
+                'debug_enabled' => '0',
             ])
             ->assertRedirect(route('ronove.admin.settings.index'))
             ->assertSessionHasNoErrors();

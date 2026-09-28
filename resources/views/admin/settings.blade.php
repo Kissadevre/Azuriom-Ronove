@@ -52,6 +52,22 @@
         @csrf
         <input type="hidden" name="review_workflow_enabled" value="0">
         <input type="hidden" name="public_language_page_enabled" value="0">
+        <input type="hidden" name="debug_enabled" value="0">
+
+        <div class="card ronove-admin-card mb-4">
+            <div class="card-header">
+                <span class="ronove-admin-eyebrow">{{ trans('ronove::admin.debug.eyebrow') }}</span>
+                <h2 class="h5 mb-1"><i class="bi bi-bug text-warning me-2" aria-hidden="true"></i>{{ trans('ronove::admin.debug.title') }}</h2>
+                <p class="text-body-secondary small mb-0">{{ trans('ronove::admin.debug.description') }}</p>
+            </div>
+            <div class="card-body">
+                <div class="ronove-setting-row">
+                    <label for="debugEnabled"><span class="fw-semibold">{{ trans('ronove::admin.debug.enabled') }}</span><p class="text-body-secondary small mt-1 mb-0">{{ trans('ronove::admin.debug.help') }}</p></label>
+                    <div class="form-check form-switch"><input class="form-check-input" id="debugEnabled" type="checkbox" name="debug_enabled" value="1" @checked(old('debug_enabled', $debugEnabled))></div>
+                </div>
+                <div class="ronove-settings-note mt-3"><i class="bi bi-file-earmark-text" aria-hidden="true"></i><code>storage/logs/ronove-debug-YYYY-MM-DD.log</code></div>
+            </div>
+        </div>
 
         <div class="card ronove-admin-card mb-4">
             <div class="card-header">
