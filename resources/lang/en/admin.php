@@ -2,6 +2,7 @@
 
 return [
     'eyebrow' => 'Ronove administration',
+    'debug' => ['eyebrow' => 'Diagnostics', 'title' => 'Debug mode', 'enabled' => 'Enable debug logging', 'description' => 'Record detailed Ronove activity for troubleshooting.', 'help' => 'Logs requests, execution time, failures, and technical context for 14 days. Credentials are redacted.'],
     'title' => 'Ronove',
     'nav' => [
         'settings' => 'Settings',

@@ -2,6 +2,7 @@
 
 return [
     'eyebrow' => 'Administración de Ronove',
+    'debug' => ['eyebrow' => 'Diagnóstico', 'title' => 'Modo debug', 'enabled' => 'Activar registros de depuración', 'description' => 'Registra la actividad detallada de Ronove para diagnosticar problemas.', 'help' => 'Registra solicitudes, tiempos de ejecución, errores y contexto técnico durante 14 días. Las credenciales se ocultan.'],
     'title' => 'Ronove',
     'nav' => [
         'settings' => 'Ajustes',

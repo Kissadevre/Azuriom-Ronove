@@ -7,15 +7,17 @@ use Azuriom\Models\ActionLog;
 use Azuriom\Models\Setting;
 use Azuriom\Plugin\Ronove\Services\PublicLanguagePage;
 use Azuriom\Plugin\Ronove\Services\ReviewWorkflow;
+use Azuriom\Plugin\Ronove\Services\RonoveSettings;
 use Illuminate\Http\Request;
 
 class SettingsController extends Controller
 {
-    public function index(ReviewWorkflow $workflow, PublicLanguagePage $publicPage)
+    public function index(ReviewWorkflow $workflow, PublicLanguagePage $publicPage, RonoveSettings $settings)
     {
         return view('ronove::admin.settings', [
             'reviewWorkflowEnabled' => $workflow->enabled(),
             'publicLanguagePageEnabled' => $publicPage->enabled(),
+            'debugEnabled' => $settings->debugEnabled(),
         ]);
     }
 
@@ -24,6 +26,7 @@ class SettingsController extends Controller
         $validated = $request->validate([
             'review_workflow_enabled' => ['required', 'boolean'],
             'public_language_page_enabled' => ['required', 'boolean'],
+            'debug_enabled' => ['required', 'boolean'],
         ]);
 
         Setting::updateSettings(
@@ -33,6 +36,10 @@ class SettingsController extends Controller
         Setting::updateSettings(
             PublicLanguagePage::SETTING_KEY,
             $validated['public_language_page_enabled'] ? '1' : '0',
+        );
+        Setting::updateSettings(
+            RonoveSettings::DEBUG_ENABLED_KEY,
+            $validated['debug_enabled'] ? '1' : '0',
         );
 
         ActionLog::log('ronove.settings.updated');
